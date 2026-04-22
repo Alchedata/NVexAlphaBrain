@@ -4,11 +4,11 @@ site_dir: site
 exclude_docs: |
   dev_notes/
 
-site_name: VLA-Engine Documentation
-site_description: A modular Vision-Language-Action (VLA) training and evaluation framework.
-site_url: https://weiyuguo.com/VLA-Engine-Developer
-repo_url: https://github.com/guoweiyu/VLA-Engine-Developer
-repo_name: guoweiyu/VLA-Engine-Developer
+site_name: AlphaBrain Documentation
+site_description: A Modular Open-Source Framework for Embodied Intelligence Research.
+site_url: https://alphabraingroup.github.io/AlphaBrain/
+repo_url: https://github.com/AlphaBrainGroup/AlphaBrain
+repo_name: AlphaBrainGroup/AlphaBrain
 edit_uri: edit/dev/docs/
 
 theme:
@@ -125,7 +125,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/guoweiyu/VLA-Engine-Developer
+      link: https://github.com/AlphaBrainGroup/AlphaBrain
   version:
     provider: mike
 
