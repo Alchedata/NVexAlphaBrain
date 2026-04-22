@@ -1,9 +1,17 @@
-# RL Token (RLT) — Online RL Fine-tuning for VLA
+# RLActionToken — Online RL Fine-tuning for VLA
 
-Minimal pipeline for RLT on LIBERO:
+Minimal pipeline for RLActionToken on LIBERO:
 
-1. **`run_rlt_5traj_alltasks.sh`** — End-to-end training (Phase 1 encoder pretrain + Phase 2 off-policy TD3 RL)
-2. **`run_eval_rlt.sh`** — Parallel per-task eval over a training run
+1. **`run_action_token_5traj_alltasks.sh`** — End-to-end training (Phase 1 encoder pretrain + Phase 2 off-policy TD3 RL)
+2. **`run_eval_action_token.sh`** — Parallel per-task eval over a training run
+
+> **Naming note.** The module directory was renamed from `RLT` to
+> `RLActionToken` to avoid implying a line-by-line reproduction of the
+> RL Token paper (Physical Intelligence, 2026). This release is inspired by
+> the paper but deviates in several concrete places (input, bottleneck,
+> decoder, pretrain data). See
+> [`AlphaBrain/training/reinforcement_learning/algos/RLActionToken/README.md`](../../AlphaBrain/training/reinforcement_learning/algos/RLActionToken/README.md)
+> for the full design notes and the delta against the paper.
 
 ---
 
@@ -19,25 +27,25 @@ Minimal pipeline for RLT on LIBERO:
 
 ```bash
 # default: GPUs 0,2,3,4,5 for rollout, 1 for train
-bash scripts/run_rl_scripts/run_rlt_5traj_alltasks.sh
+bash scripts/run_rl_scripts/run_action_token_5traj_alltasks.sh
 
 # override GPU layout
-bash scripts/run_rl_scripts/run_rlt_5traj_alltasks.sh "0,1,2,3,4,5"
+bash scripts/run_rl_scripts/run_action_token_5traj_alltasks.sh "0,1,2,3,4,5"
 ```
 
 
-**Checkpoints** land in `results/rlt_training_TD3/<run_name>_<timestamp>/rl_offpolicy/checkpoints/rl_offpolicy_iter_NNNNN/`.
+**Checkpoints** land in `results/action_token_training_TD3/<run_name>_<timestamp>/rl_offpolicy/checkpoints/rl_offpolicy_iter_NNNNN/`.
 
 ### Step 2 — Eval
 
 ```bash
 # default eval GPUs: 0,1,2
-bash scripts/run_rl_scripts/run_eval_rlt.sh \
-    results/rlt_training_TD3/rlt_5traj_alltasks_release_0414_1727/rl_offpolicy
+bash scripts/run_rl_scripts/run_eval_action_token.sh \
+    results/action_token_training_TD3/action_token_5traj_alltasks_release_0414_1727/rl_offpolicy
 
 # override eval GPUs
-bash scripts/run_rl_scripts/run_eval_rlt.sh \
-    results/rlt_training_TD3/rlt_5traj_alltasks_release_0414_1727/rl_offpolicy \
+bash scripts/run_rl_scripts/run_eval_action_token.sh \
+    results/action_token_training_TD3/action_token_5traj_alltasks_release_0414_1727/rl_offpolicy \
     "3,4,5"
 ```
 
@@ -48,7 +56,7 @@ The 10 tasks are split across the given GPUs and aggregated inline. Output lands
 
 ## CLI Reference
 
-Key knobs inside `run_rlt_5traj_alltasks.sh` (edit if your hardware differs):
+Key knobs inside `run_action_token_5traj_alltasks.sh` (edit if your hardware differs):
 
 | Flag | Default | Meaning |
 |:-----|:--------|:--------|
@@ -66,7 +74,7 @@ Key knobs inside `run_rlt_5traj_alltasks.sh` (edit if your hardware differs):
 | `--ref_dropout` | `0.5` | Reference-action dropout probability |
 | `--fixed_std` | `0.1` | Gaussian exploration std |
 
-All other hyper-parameters are set inside the script or via `configs/rl_recipes/QwenOFT_LIBERO_RLT.yaml`.
+All other hyper-parameters are set inside the script or via `configs/rl_recipes/QwenOFT_LIBERO_ActionToken.yaml`.
 
 ---
 
@@ -121,10 +129,10 @@ rollout_passes   = ceil(G_per_task / num_envs_per_task)    # sequential chunks i
 
 A few honest notes on what this release is — and what it isn't:
 
-- **Why we open-source RLT first.** One of the reasons we open-source RLT is that we believe the idea itself — compressing VLA hidden states through an information bottleneck and then editing a reference policy with residual actions — is novel and genuinely promising, and worth sharing with the community at an early stage. This does **not** mean we consider GRPO / PPO any less important; on the contrary, we view them as core algorithms for VLA online RL, and we will progressively update and release our implementations of them in subsequent versions.
-- **On reproducing RLT in simulation.** Faithfully reproducing every detail from the original RLT paper inside a simulator is genuinely hard — in particular the carefully curated tuning datasets and the timely human-in-the-loop interventions described in the paper are difficult to replicate one-for-one in a purely automated sim setup. The recipe we ship here is therefore a best-effort simulation adaptation, not a line-by-line reproduction of the paper.
+- **Why we open-source RLActionToken first.** One of the reasons we open-source RLActionToken is that we believe the idea itself — compressing VLA hidden states through an information bottleneck and then editing a reference policy with residual actions — is novel and genuinely promising, and worth sharing with the community at an early stage. This does **not** mean we consider GRPO / PPO any less important; on the contrary, we view them as core algorithms for VLA online RL, and we will progressively update and release our implementations of them in subsequent versions.
+- **On reproducing the RL Token paper in simulation.** Faithfully reproducing every detail from the original RL Token paper inside a simulator is genuinely hard — in particular the carefully curated tuning datasets and the timely human-in-the-loop interventions described in the paper are difficult to replicate one-for-one in a purely automated sim setup. The recipe we ship here (`RLActionToken`) is therefore a best-effort simulation adaptation, not a line-by-line reproduction of the paper. See the algo README under `AlphaBrain/training/reinforcement_learning/algos/RLActionToken/` for the concrete deltas.
 - **What we believe matters most.** Even so, we believe that collecting high-quality positive trajectories is one of the most critical open problems in this area — good positives do far more than clever loss tricks. Going forward we plan to:
-  1. broaden the online-RL algorithm coverage (GRPO, PPO, and variants beyond RLT);
+  1. broaden the online-RL algorithm coverage (GRPO, PPO, and RLT_original);
   2. improve tooling for positive-sample collection, filtering, and curation on both sim and real-world data;
   3. release stronger, better-documented baselines and more reproducible recipes as the work matures.
 

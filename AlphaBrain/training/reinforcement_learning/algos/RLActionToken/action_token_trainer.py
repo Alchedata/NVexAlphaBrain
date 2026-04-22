@@ -1,5 +1,5 @@
 """
-RLT Trainer: Two-phase training for RL Tokens.
+ActionToken Trainer: Two-phase training for the RLActionToken variant.
 
 Phase 1 — Encoder Pretraining:
   Freeze VLA, train encoder-decoder via reconstruction loss on rollout data.
@@ -27,8 +27,8 @@ from PIL import Image
 
 from AlphaBrain.training.reinforcement_learning.envs.libero_env import LiberoEnv
 from AlphaBrain.training.reinforcement_learning.common.replay_buffer import ReplayBuffer
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import RLTActor, RLTCritic, RLTQCritic
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import ActionTokenActor, ActionTokenCritic, ActionTokenQCritic
 from AlphaBrain.training.reinforcement_learning.common.rollout import _unnormalize, _postprocess_action, _save_video
 
 logger = logging.getLogger(__name__)
@@ -194,8 +194,8 @@ class BatchInferenceServer:
 # ------------------------------------------------------------------
 
 @dataclass
-class RLTStepRecord:
-    """One inference step during RLT rollout."""
+class ActionTokenStepRecord:
+    """One inference step during RLActionToken rollout."""
     rl_token: torch.Tensor        # (1, D) detached cpu
     vla_action: torch.Tensor      # (chunk_len, action_dim) detached cpu
     action_taken: torch.Tensor    # (chunk_len, action_dim) detached cpu
@@ -211,8 +211,8 @@ class RLTStepRecord:
 
 
 @dataclass
-class RLTEpisode:
-    step_records: List[RLTStepRecord] = field(default_factory=list)
+class ActionTokenEpisode:
+    step_records: List[ActionTokenStepRecord] = field(default_factory=list)
     reward: float = 0.0
     task_id: int = 0
     success: bool = False
@@ -229,7 +229,7 @@ class RLTEpisode:
 
 def pretrain_encoder_step(
     frozen_vla,
-    enc_dec: RLTEncoderDecoder,
+    enc_dec: ActionTokenEncoderDecoder,
     batch_images: list,
     instructions: list,
     device: str = "cuda",
@@ -403,10 +403,10 @@ def extract_action_queries_dataset(
 
 
 # ------------------------------------------------------------------
-# Phase 2: RLT Rollout — frozen VLA + encoder + actor
+# Phase 2: RLActionToken Rollout — frozen VLA + encoder + actor
 # ------------------------------------------------------------------
 
-def _rlt_rollout_one(
+def _action_token_rollout_one(
     env: LiberoEnv,
     batch_server: BatchInferenceServer,
     suite_name: str,
@@ -423,14 +423,14 @@ def _rlt_rollout_one(
     video_dir: Optional[str],
     store_images: bool = False,
     reward_coef: float = 1.0,
-) -> RLTEpisode:
-    """Run one episode with RLT actor via BatchInferenceServer.
+) -> ActionTokenEpisode:
+    """Run one episode with RLActionToken actor via BatchInferenceServer.
 
     Chunk subsampling (paper): at stride-2 positions (2, 4, 6) within each chunk,
     call batch_server.infer() on the intermediate observation to get (rl_token, vla_action).
     These are stored in step_record.sub_tokens for push_episodes_to_buffer to use.
     """
-    episode = RLTEpisode(task_id=task_id, state_idx=state_idx)
+    episode = ActionTokenEpisode(task_id=task_id, state_idx=state_idx)
     frames: List[np.ndarray] = [] if record_video else None
 
     obs = env.reset(
@@ -444,7 +444,7 @@ def _rlt_rollout_one(
     env_step = 0
     action_cache: Optional[np.ndarray] = None
     cache_idx = 0
-    current_sr: Optional[RLTStepRecord] = None
+    current_sr: Optional[ActionTokenStepRecord] = None
 
     # Stride positions within a chunk for subsampling (paper: stride=2)
     _sub_positions = set(range(2, chunk_len, 2))  # {2, 4, 6} for chunk_len=8
@@ -464,7 +464,7 @@ def _rlt_rollout_one(
 
             action_np = action_cpu[0].numpy()  # (chunk_len, action_dim)
 
-            current_sr = RLTStepRecord(
+            current_sr = ActionTokenStepRecord(
                 rl_token=rl_token_cpu[0],       # (1, D)
                 vla_action=vla_action_cpu[0],   # (chunk_len, A)
                 action_taken=action_cpu[0],     # (chunk_len, A)
@@ -521,7 +521,7 @@ def _rlt_rollout_one(
         status = "success" if episode.success else "fail"
         vpath = os.path.join(
             video_dir,
-            f"rlt_g{group_idx:02d}_t{task_id:02d}_ep{episode_idx:02d}_{status}.mp4",
+            f"at_g{group_idx:02d}_t{task_id:02d}_ep{episode_idx:02d}_{status}.mp4",
         )
         episode.video_path = _save_video(frames, vpath)
 
@@ -529,11 +529,11 @@ def _rlt_rollout_one(
 
 
 @torch.no_grad()
-def rlt_collect_group(
+def action_token_collect_group(
     frozen_vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
-    critic: RLTCritic,
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
+    critic: ActionTokenCritic,
     suite_name: str,
     task_id: int,
     n_initial_states: int,
@@ -552,9 +552,9 @@ def rlt_collect_group(
     store_images: bool = False,
     group_size: int = 1,
     reward_coef: float = 1.0,
-) -> List[RLTEpisode]:
+) -> List[ActionTokenEpisode]:
     """
-    Collect G episodes using RLT policy.
+    Collect G episodes using RLActionToken policy.
 
     Uses BatchInferenceServer for GPU inference: all num_envs env threads submit
     requests concurrently; a single background thread batches them into one GPU
@@ -563,8 +563,8 @@ def rlt_collect_group(
     Args:
         batch_server: shared server for this GPU (created by caller for cross-task
                       batching). If None, creates a local server for this call only.
-        group_size: number of trajectories per initial state (like RLinf/SimpleVLA-RL).
-                    G episodes are split into G//group_size unique states, each repeated
+        group_size: number of trajectories per initial state. G episodes are
+                    split into G//group_size unique states, each repeated
                     group_size times. Default 1 = legacy behavior (no repeat).
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -593,7 +593,7 @@ def rlt_collect_group(
         if (_ei + 1) % 10 == 0 or _ei == G - 1:
             print(f"  envs created: {_ei+1}/{G}", flush=True)
 
-    # Assign initial states: same-state grouping (RLinf/SimpleVLA-RL style)
+    # Assign initial states: same-state grouping.
     # G episodes → G//group_size unique states, each repeated group_size times
     num_unique = max(1, G // group_size)
     _rng = np.random.RandomState(seed + group_idx)
@@ -606,7 +606,7 @@ def rlt_collect_group(
             futures = {}
             for g in range(G):
                 fut = pool.submit(
-                    _rlt_rollout_one,
+                    _action_token_rollout_one,
                     env=envs[g],
                     batch_server=batch_server,
                     suite_name=suite_name,
@@ -648,16 +648,16 @@ def rlt_collect_group(
 
 
 # ------------------------------------------------------------------
-# Phase 2: PPO-clip loss for RLT small networks
+# Phase 2: PPO-clip loss for RLActionToken small networks
 # ------------------------------------------------------------------
 
-def compute_rlt_gae(
-    episode: RLTEpisode,
+def compute_action_token_gae(
+    episode: ActionTokenEpisode,
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
 ):
     """
-    Compute GAE advantages and returns for a single RLT episode.
+    Compute GAE advantages and returns for a single RLActionToken episode.
 
     Returns:
         advantages: list of floats (len = finish_step)
@@ -688,11 +688,11 @@ def compute_rlt_gae(
     return advantages, returns
 
 
-def rlt_ppo_loss(
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
-    critic: RLTCritic,
-    episodes: List[RLTEpisode],
+def action_token_ppo_loss(
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
+    critic: ActionTokenCritic,
+    episodes: List[ActionTokenEpisode],
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
     clip_eps: float = 0.2,
@@ -702,7 +702,7 @@ def rlt_ppo_loss(
     device: str = "cuda",
 ):
     """
-    Compute PPO loss on a batch of RLT episodes.
+    Compute PPO loss on a batch of RLActionToken episodes.
 
     Only encoder + actor + critic have gradients.
     Optionally add reconstruction loss as regularizer.
@@ -721,7 +721,7 @@ def rlt_ppo_loss(
     all_prop_states = []
 
     for ep in episodes:
-        adv, ret = compute_rlt_gae(ep, gamma, gae_lambda)
+        adv, ret = compute_action_token_gae(ep, gamma, gae_lambda)
         for t in range(ep.finish_step):
             step = ep.step_records[t]
             all_rl_tokens.append(step.rl_token)
@@ -799,7 +799,7 @@ def rlt_ppo_loss(
 # ------------------------------------------------------------------
 
 def push_episodes_to_buffer(
-    episodes: List[RLTEpisode],
+    episodes: List[ActionTokenEpisode],
     replay_buffer: ReplayBuffer,
     gamma_per_step: float = 0.99,
 ):
@@ -919,10 +919,10 @@ def push_episodes_to_buffer(
 
 def vla_finetune_step(
     vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
-    q_critic: RLTQCritic,
-    episodes: List[RLTEpisode],
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
+    q_critic: ActionTokenQCritic,
+    episodes: List[ActionTokenEpisode],
     beta: float = 0.1,
     device: str = "cuda",
     micro_batch: int = 4,
@@ -1004,13 +1004,13 @@ def vla_finetune_step(
 
 
 # ------------------------------------------------------------------
-# Off-policy TD update (RLT paper style: TD3 twin-Q + DDPG actor)
+# Off-policy TD update (RL Token paper style: TD3 twin-Q + DDPG actor)
 # ------------------------------------------------------------------
 
-def rlt_td_critic_update(
-    actor: RLTActor,
-    q_critic: RLTQCritic,
-    target_q_critic: RLTQCritic,
+def action_token_td_critic_update(
+    actor: ActionTokenActor,
+    q_critic: ActionTokenQCritic,
+    target_q_critic: ActionTokenQCritic,
     replay_buffer: ReplayBuffer,
     batch_size: int = 256,
     gamma: float = 0.99,
@@ -1018,7 +1018,7 @@ def rlt_td_critic_update(
     target_noise_std: float = 0.2,
     target_noise_clip: float = 0.5,
     n_tasks: int = 0,
-    target_actor: RLTActor = None,
+    target_actor: ActionTokenActor = None,
 ):
     """
     TD3-style twin-Q critic update from replay buffer (Eq. 3 in paper).
@@ -1076,9 +1076,9 @@ def rlt_td_critic_update(
     return critic_loss, stats
 
 
-def rlt_td_actor_update(
-    actor: RLTActor,
-    q_critic: RLTQCritic,
+def action_token_td_actor_update(
+    actor: ActionTokenActor,
+    q_critic: ActionTokenQCritic,
     replay_buffer: ReplayBuffer,
     batch_size: int = 256,
     beta: float = 1.0,
@@ -1086,7 +1086,7 @@ def rlt_td_actor_update(
     n_tasks: int = 0,
 ):
     """
-    DDPG-style actor update from the RLT paper (Eq. 5):
+    DDPG-style actor update from the RL Token paper (Eq. 5):
 
     L_π(θ) = E[ -Q_ψ(x, a) + β ‖a - ã‖² ]
 
@@ -1128,9 +1128,9 @@ def rlt_td_actor_update(
     return actor_loss, stats
 
 
-def rlt_td_update(
-    actor: RLTActor,
-    critic,  # RLTQCritic or legacy RLTCritic
+def action_token_td_update(
+    actor: ActionTokenActor,
+    critic,  # ActionTokenQCritic or legacy ActionTokenCritic
     replay_buffer: ReplayBuffer,
     batch_size: int = 256,
     gamma: float = 0.99,
@@ -1144,8 +1144,8 @@ def rlt_td_update(
     """
     Combined TD3-style update step (backward compat wrapper).
 
-    If critic is RLTQCritic: uses the new TD3/DDPG-style from paper.
-    If critic is RLTCritic (legacy V(s)): falls back to old logic.
+    If critic is ActionTokenQCritic: uses the new TD3/DDPG-style from paper.
+    If critic is ActionTokenCritic (legacy V(s)): falls back to old logic.
 
     Args:
         beta: BC regularization coefficient (paper Eq. 5)
@@ -1157,10 +1157,10 @@ def rlt_td_update(
         loss: scalar tensor
         stats: dict
     """
-    if isinstance(critic, RLTQCritic):
+    if isinstance(critic, ActionTokenQCritic):
         # ── New TD3-style from paper ──
         # Critic update
-        critic_loss, c_stats = rlt_td_critic_update(
+        critic_loss, c_stats = action_token_td_critic_update(
             actor=actor,
             q_critic=critic,
             target_q_critic=target_critic,
@@ -1174,7 +1174,7 @@ def rlt_td_update(
 
         if update_actor:
             # Actor update (DDPG + BC regularization)
-            actor_loss, a_stats = rlt_td_actor_update(
+            actor_loss, a_stats = action_token_td_actor_update(
                 actor=actor,
                 q_critic=critic,
                 replay_buffer=replay_buffer,

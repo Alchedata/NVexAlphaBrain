@@ -10,8 +10,8 @@ from accelerate.utils import set_seed
 
 from AlphaBrain.model.framework.base_framework import BaseFramework
 from AlphaBrain.training.reinforcement_learning.envs.libero_env import MAX_STEPS, get_suite_info
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import (
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import (
     collect_observations_fast,
     extract_action_queries_from_obs,
 )
@@ -46,7 +46,7 @@ def run_pretrain(args):
     logger.info(f"Suite: {args.suite} | hidden_dim={hidden_dim} | chunk_len={chunk_len}")
 
     # Create encoder-decoder
-    enc_dec = RLTEncoderDecoder(
+    enc_dec = ActionTokenEncoderDecoder(
         input_dim=hidden_dim,
         bottleneck_dim=args.bottleneck_dim,
         chunk_len=chunk_len,
@@ -56,13 +56,13 @@ def run_pretrain(args):
     ).to(device)
 
     n_params = sum(p.numel() for p in enc_dec.parameters())
-    logger.info(f"RLT Encoder-Decoder: {n_params / 1e6:.2f}M parameters")
+    logger.info(f"RLActionToken Encoder-Decoder: {n_params / 1e6:.2f}M parameters")
 
     optimizer = torch.optim.AdamW(enc_dec.parameters(), lr=args.pretrain_lr)
 
     # WandB
     if args.use_wandb:
-        run_name = args.run_name or f"rlt_pretrain_{args.suite}"
+        run_name = args.run_name or f"action_token_pretrain_{args.suite}"
         wandb.init(project=args.wandb_project, name=run_name, config=vars(args))
 
     # Phase 1a: Fast observation collection (no VLA forward, just env resets + random steps)

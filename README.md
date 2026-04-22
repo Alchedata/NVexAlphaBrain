@@ -33,7 +33,7 @@
 </tr>
 <tr>
 <td width="50" align="center">🎯</td>
-<td><b>RL Token Training Paradigm</b> — The first open-source VLA training architecture based on <b>RL Token</b>, a novel architecture that compresses VLA hidden states through an information bottleneck, followed by off-policy Actor-Critic reinforcement learning.</td>
+<td><b>RLActionToken Training Paradigm</b> — The first open-source VLA training architecture based on <b>RL Token</b>, a novel architecture that compresses VLA hidden states through an information bottleneck, followed by off-policy Actor-Critic reinforcement learning.</td>
 
 </tr>
 <tr>
@@ -58,7 +58,7 @@ Full setup, training, evaluation, and deployment instructions live in our docume
 
 ## 🔬 Key Features
 
-AlphaBrain delivers five core capabilities on a single stack: the **VLA framework family** as the base, with **NeuroVLA / RL-Token / Continual Learning / World Model** as composable capability modules. All capabilities share the same trainer, config system, and inference interface.
+AlphaBrain delivers five core capabilities on a single stack: the **VLA framework family** as the base, with **NeuroVLA / RLActionToken / Continual Learning / World Model** as composable capability modules. All capabilities share the same trainer, config system, and inference interface.
 
 ### VLA Frameworks
 
@@ -80,11 +80,11 @@ NeuroVLA integrates spiking neural networks with biological learning rules into 
 - **R-STDP Training** — Reward-Modulated Spike-Timing-Dependent Plasticity, supporting both hybrid (backprop + STDP) and pure STDP modes;
 - **Online STDP** — Test-time adaptation with zero backpropagation, using self-supervised reward signals from environment interaction.
 
-### RL Token (RLT) Online RL Fine-tuning
+### RLActionToken Online RL Fine-tuning
 
 A novel architecture that compresses VLA hidden states through an information bottleneck, followed by off-policy Actor-Critic reinforcement learning:
-- **Encoder-Decoder**: Extracts a compact RL token from the VLA's internal features to serve as the state representation for RL. 
-- **Two-Phase Training**: An initial adaptation stage to expose the RL token → RL fine-tuning with a frozen VLA.
+- **Encoder-Decoder**: Extracts a compact action token from the VLA's internal features to serve as the state representation for RL.
+- **Two-Phase Training**: An initial adaptation stage to expose the action token → RL fine-tuning with a frozen VLA.
 - **Low Resource Requirements**: The actual reinforcement learning gradient update phase involves a highly lightweight parameters.
 
 ### Continual Learning

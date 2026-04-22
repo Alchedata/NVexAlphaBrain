@@ -1,5 +1,5 @@
 """
-Fast RLT rollout — step-lock architecture (like SimpleVLA-RL/RLinf).
+Fast ActionToken rollout — step-lock architecture.
 
 Key design: all envs move in lockstep.
   1. Batch VLA forward for ALL active envs (one GPU call)
@@ -22,9 +22,9 @@ import numpy as np
 import torch
 
 from AlphaBrain.training.reinforcement_learning.envs.persistent_env_pool import PersistentEnvPool
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import RLTActor, RLTCritic
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import RLTEpisode, RLTStepRecord
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import ActionTokenActor, ActionTokenCritic
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import ActionTokenEpisode, ActionTokenStepRecord
 from AlphaBrain.training.reinforcement_learning.common.rollout import _unnormalize, _postprocess_action, DUMMY_ACTION
 
 logger = logging.getLogger(__name__)
@@ -54,12 +54,12 @@ def _env_dummy_steps(env_pool, env_idx, n_steps):
 
 
 @torch.no_grad()
-def rlt_collect_group_steplock(
+def action_token_collect_group_steplock(
     env_pool: PersistentEnvPool,
     frozen_vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
-    critic: RLTCritic,
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
+    critic: ActionTokenCritic,
     suite_name: str,
     task_id: int,
     n_initial_states: int,
@@ -78,7 +78,7 @@ def rlt_collect_group_steplock(
     actor_chunk_len: int = None,
     env_offset: int = 0,
     warmup_mode: bool = False,
-) -> List[RLTEpisode]:
+) -> List[ActionTokenEpisode]:
     """
     Collect G episodes using step-lock architecture.
 
@@ -128,7 +128,7 @@ def rlt_collect_group_steplock(
                 obs_list[_futs[_f]] = _f.result()
 
     # ── Phase 3: Step-lock main loop ──
-    episodes = [RLTEpisode(task_id=task_id, state_idx=int(state_ids[g])) for g in range(G)]
+    episodes = [ActionTokenEpisode(task_id=task_id, state_idx=int(state_ids[g])) for g in range(G)]
     active = [True] * G  # which envs are still running
     env_steps = [0] * G
     all_frames = [[] for _ in range(G)]  # video frames
@@ -197,7 +197,7 @@ def rlt_collect_group_steplock(
         # ── Store step records ──
         _t0 = time.time()
         for i, g in enumerate(active_ids):
-            sr = RLTStepRecord(
+            sr = ActionTokenStepRecord(
                 rl_token=rl_tokens[i:i+1].cpu().squeeze(0),
                 vla_action=vla_actions_cpu[i],
                 action_taken=actions_t[i].detach().cpu(),
@@ -289,12 +289,12 @@ def rlt_collect_group_steplock(
 
 
 @torch.no_grad()
-def rlt_collect_multitask_steplock(
+def action_token_collect_multitask_steplock(
     env_pool: PersistentEnvPool,
     frozen_vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
-    critic: RLTCritic,
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
+    critic: ActionTokenCritic,
     suite_name: str,
     task_ids: List[int],
     n_initial_states: int,
@@ -311,7 +311,7 @@ def rlt_collect_multitask_steplock(
     reward_coef: float = 1.0,
     actor_chunk_len: int = None,
     warmup_mode: bool = False,
-) -> List[RLTEpisode]:
+) -> List[ActionTokenEpisode]:
     """
     Collect episodes for MULTIPLE tasks on ONE GPU in a single step-lock loop.
 
@@ -367,7 +367,7 @@ def rlt_collect_multitask_steplock(
                 obs_list[_futs[_f]] = _f.result()
 
     # ── Phase 3: Step-lock main loop (ALL tasks merged) ──
-    episodes = [RLTEpisode(task_id=all_task_labels[g], state_idx=int(all_state_ids[g]))
+    episodes = [ActionTokenEpisode(task_id=all_task_labels[g], state_idx=int(all_state_ids[g]))
                 for g in range(total_G)]
     active = [True] * total_G
     env_steps = [0] * total_G
@@ -414,7 +414,7 @@ def rlt_collect_multitask_steplock(
 
         # Store records
         for i, g in enumerate(active_ids):
-            episodes[g].step_records.append(RLTStepRecord(
+            episodes[g].step_records.append(ActionTokenStepRecord(
                 rl_token=rl_tokens[i:i+1].cpu().squeeze(0),
                 vla_action=vla_actions_cpu[i],
                 action_taken=actions_t[i].detach().cpu(),

@@ -1,7 +1,18 @@
 """
-RLT Encoder-Decoder: Information bottleneck between frozen VLA and small RL network.
+ActionToken Encoder-Decoder: Information bottleneck between frozen VLA and
+small RL network.
 
-Based on "RL Token" paper (Physical Intelligence, 2026).
+Inspired by the "RL Token" paper (Physical Intelligence, 2026), but with
+deviations from the paper's construction:
+  - Encoder input is the VLA's action-query hidden states (M × H) gathered at
+    the action-token positions, not the full image-token sequence (N × H) as
+    in the paper's Fig. 2.
+  - An extra `Linear(H → bottleneck_dim)` projection compresses per-token dim
+    (e.g. 2048 → 256); the paper keeps the RL token at the VLA hidden dim.
+  - The decoder is a self-attention transformer with a causal mask and a
+    prefix token, not the encoder-decoder cross-attention structure of the
+    paper's Eq. 2.
+A faithful paper-accurate reimplementation is still under test.
 
 Paper Eq. 1 — Encoder:
   z_rl = g_φ([z_{1:M}, e_rl])_{M+1}
@@ -19,7 +30,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class RLTEncoder(nn.Module):
+class ActionTokenEncoder(nn.Module):
     """
     Paper Eq. 1: Compress VLA action_queries (B, M, H) → rl_token (B, 1, D).
 
@@ -73,7 +84,7 @@ class RLTEncoder(nn.Module):
         return rl_token
 
 
-class RLTDecoder(nn.Module):
+class ActionTokenDecoder(nn.Module):
     """
     Paper Eq. 2: Autoregressive reconstruction of VLA tokens from z_rl.
 
@@ -153,9 +164,9 @@ class RLTDecoder(nn.Module):
         return seq  # (B, M, H) — each position predicts the corresponding target
 
 
-class RLTEncoderDecoder(nn.Module):
+class ActionTokenEncoderDecoder(nn.Module):
     """
-    Combined Encoder-Decoder for RLT pretraining.
+    Combined Encoder-Decoder for ActionToken pretraining.
 
     Training: autoregressive reconstruction with teacher forcing.
     Inference: encoder only (decoder not used during RL).
@@ -172,14 +183,14 @@ class RLTEncoderDecoder(nn.Module):
         dropout: float = 0.0,
     ):
         super().__init__()
-        self.encoder = RLTEncoder(
+        self.encoder = ActionTokenEncoder(
             input_dim=input_dim,
             bottleneck_dim=bottleneck_dim,
             num_heads=num_heads,
             num_layers=encoder_layers,
             dropout=dropout,
         )
-        self.decoder = RLTDecoder(
+        self.decoder = ActionTokenDecoder(
             bottleneck_dim=bottleneck_dim,
             output_dim=input_dim,
             chunk_len=chunk_len,

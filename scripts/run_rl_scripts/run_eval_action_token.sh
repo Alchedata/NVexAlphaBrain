@@ -1,15 +1,7 @@
 #!/bin/bash
-# =============================================================================
-# Eval the latest rl_offpolicy_iter_* ckpt produced by an RLT training run.
-#
-# Splits the 10 libero_goal tasks across 3 GPUs in parallel (round-robin),
-# then aggregates per-task SR into <RUN_DIR>/eval_<iter>/summary.json.
-#
-# Usage: bash scripts/run_rl_scripts/run_eval_rlt.sh RUN_DIR [GPU_IDS]
-#   RUN_DIR  the rl_offpolicy/ dir from training, e.g.
-#            results/rlt_training_TD3/rlt_5traj_alltasks_release_0420_1254/rl_offpolicy
-#   GPU_IDS  3 comma-separated physical GPU IDs (default "0,1,2")
-# =============================================================================
+# Eval an RLActionToken run: 10 libero_goal tasks split across 3 GPUs, then
+# aggregated into <RUN_DIR>/eval_<ITER>/summary.json.
+# Edit VLA_CKPT / RUN_DIR / ITER / GPU_IDS below, or override via argv.
 set -euo pipefail
 cd "${ALPHABRAIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"  # e.g. /path/to/AlphaBrain
 
@@ -25,27 +17,17 @@ export LIBERO_HOME="${LIBERO_HOME:-/path/to/LIBERO}"
 export TOKENIZERS_PARALLELISM=false
 export MUJOCO_GL="${MUJOCO_GL:-egl}"
 
-# Default RUN_DIR: latest run under rlt_training_TD3/ that has at least one
-# rl_offpolicy_iter_* ckpt. Override by passing RUN_DIR as the first arg.
-DEFAULT_RUN_DIR=""
-for d in $(ls -td results/rlt_training_TD3/*/rl_offpolicy 2>/dev/null); do
-    if compgen -G "${d}/checkpoints/rl_offpolicy_iter_*" > /dev/null; then
-        DEFAULT_RUN_DIR="${d}"
-        break
-    fi
-done
-RUN_DIR=${1:-${DEFAULT_RUN_DIR}}
-if [[ -z "${RUN_DIR}" ]]; then
-    echo "ERROR: no completed run found; pass RUN_DIR explicitly" >&2
-    exit 1
-fi
-GPU_IDS=${2:-"0,1,2"}
-IFS=',' read -r GPU_A GPU_B GPU_C <<< "${GPU_IDS}"
-
+# ── Edit these before running ────────────────────────────────
 VLA_CKPT="results/training/QwenOFT-5traj-libero_goal/final_model"
+RUN_DIR=${1:-"results/rlt_training_TD3/rlt_5traj_alltasks_v3_release_0414_1727/rl_offpolicy"}
+
 ITER="iter_00400"
-RLT_CKPT="${RUN_DIR}/checkpoints/rl_offpolicy_${ITER}"
+GPU_IDS=${2:-"0,1,2"}
+# ─────────────────────────────────────────────────────────────
+
+ACTION_TOKEN_CKPT="${RUN_DIR}/checkpoints/rl_offpolicy_${ITER}"
 OUT_DIR="${RUN_DIR}/eval_${ITER}"
+IFS=',' read -r GPU_A GPU_B GPU_C <<< "${GPU_IDS}"
 mkdir -p "${OUT_DIR}"
 
 # Remove stale shard JSONs from prior runs so aggregate never silently reads
@@ -62,8 +44,8 @@ NUM_WORKERS=4
 SUITE=libero_goal
 ARCH_ARGS="--bottleneck_dim 256 --encoder_layers 2 --encoder_heads 4 --actor_hidden_dim 512 --ref_dropout 0.5 --fixed_std 0.1 --prop_dim 8"
 
-if [ ! -d "${RLT_CKPT}" ]; then
-    echo "ERROR: RLT ckpt not found: ${RLT_CKPT}" >&2
+if [ ! -d "${ACTION_TOKEN_CKPT}" ]; then
+    echo "ERROR: RLActionToken ckpt not found: ${ACTION_TOKEN_CKPT}" >&2
     exit 1
 fi
 if [ ! -d "${VLA_CKPT}" ]; then
@@ -72,8 +54,8 @@ if [ ! -d "${VLA_CKPT}" ]; then
 fi
 
 echo "============================================================"
-echo " Eval RLT (${ITER}) | ${N_EPS} eps/task, ${NUM_WORKERS} workers/shard"
-echo "   ckpt: ${RLT_CKPT}"
+echo " Eval RLActionToken (${ITER}) | ${N_EPS} eps/task, ${NUM_WORKERS} workers/shard"
+echo "   ckpt: ${ACTION_TOKEN_CKPT}"
 echo "   vla:  ${VLA_CKPT}"
 echo "   out:  ${OUT_DIR}"
 echo "   GPU ${GPU_A}: tasks [${TASKS_A}]"
@@ -108,7 +90,7 @@ run_shard () {
     # subtree (python + its libero_env_worker children) via `kill -- -PGID`.
     CUDA_VISIBLE_DEVICES=${gpu} setsid python AlphaBrain/training/reinforcement_learning/eval/eval_libero.py \
         --vla_ckpt "${VLA_CKPT}" \
-        --rlt_ckpt "${RLT_CKPT}" \
+        --action_token_ckpt "${ACTION_TOKEN_CKPT}" \
         --suite ${SUITE} \
         --n_eps_per_task ${N_EPS} \
         --gpu 0 \
@@ -157,7 +139,7 @@ echo " Aggregating per-task SR"
 echo "============================================================"
 python AlphaBrain/training/reinforcement_learning/eval/aggregate_shards.py \
     --out_dir  "${OUT_DIR}" \
-    --rlt_ckpt "${RLT_CKPT}" \
+    --action_token_ckpt "${ACTION_TOKEN_CKPT}" \
     --vla_ckpt "${VLA_CKPT}" \
     --suite    "${SUITE}" \
     --n_eps    "${N_EPS}"
