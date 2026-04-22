@@ -1,5 +1,5 @@
 """
-Off-policy replay buffer for RLT training (RLT paper style).
+Off-policy replay buffer for RLActionToken training (RL Token paper style).
 
 Stores transitions as detached CPU tensors in a ring buffer.
 Each transition stores:

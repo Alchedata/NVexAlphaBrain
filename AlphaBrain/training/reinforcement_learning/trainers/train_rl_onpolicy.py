@@ -4,12 +4,11 @@ NOTE: this is the legacy on-policy training path. The off-policy TD3 variant
 (train_rl_offpolicy.run_rl_offpolicy) is the production code path used by every
 release run; this file is kept for reference.
 
-TODO: implement proper PPO / GRPO updates here. The current `rlt_ppo_loss` is
+TODO: implement proper PPO / GRPO updates here. The current `action_token_ppo_loss` is
 a placeholder that mixes value-loss + clipped surrogate; before relying on this
 phase for new experiments, port a battle-tested PPO loop (importance sampling,
 KL early stop, value clipping, gradient accumulation, group-relative
-normalization for GRPO, etc.) from a reference implementation (e.g.
-SimpleVLA-RL or RLinf).
+normalization for GRPO, etc.) from a reference implementation.
 """
 import json
 import logging
@@ -27,9 +26,9 @@ from AlphaBrain.model.framework.base_framework import BaseFramework
 from AlphaBrain.training.reinforcement_learning.common.ckpt_io import save_rlt_checkpoint
 from AlphaBrain.training.reinforcement_learning.eval.eval_helpers import _eval_distributed
 from AlphaBrain.training.reinforcement_learning.envs.libero_env import MAX_STEPS, get_suite_info
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import RLTActor, RLTCritic
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import rlt_collect_group, rlt_ppo_loss
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import ActionTokenActor, ActionTokenCritic
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import action_token_collect_group, action_token_ppo_loss
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def run_rl(args):
     """Phase 2 on-policy: multi-GPU parallel rollout + PPO update.
 
     Each GPU loads a frozen VLA copy and runs its own env workers to collect
-    episodes in parallel. All episodes are gathered, then the tiny RLT
+    episodes in parallel. All episodes are gathered, then the tiny RLActionToken
     network update happens on every rank (identical, since network is tiny).
 
     6 GPUs = 6× rollout throughput (the actual bottleneck is CPU env.step).
@@ -69,8 +68,8 @@ def run_rl(args):
     n_tasks = suite_info["n_tasks"]
     max_steps = MAX_STEPS[args.suite]
 
-    # Create RLT modules (tiny, same on all ranks)
-    enc_dec = RLTEncoderDecoder(
+    # Create RLActionToken modules (tiny, same on all ranks)
+    enc_dec = ActionTokenEncoderDecoder(
         input_dim=hidden_dim,
         bottleneck_dim=args.bottleneck_dim,
         chunk_len=chunk_len,
@@ -84,7 +83,7 @@ def run_rl(args):
         state = torch.load(args.encoder_path, map_location=device)
         enc_dec.load_state_dict(state)
 
-    actor = RLTActor(
+    actor = ActionTokenActor(
         bottleneck_dim=args.bottleneck_dim,
         action_dim=action_dim,
         chunk_len=chunk_len,
@@ -92,7 +91,7 @@ def run_rl(args):
         ref_dropout=args.ref_dropout,
     ).to(device)
 
-    critic = RLTCritic(
+    critic = ActionTokenCritic(
         bottleneck_dim=args.bottleneck_dim,
         hidden_dim=args.critic_hidden_dim,
     ).to(device)
@@ -103,7 +102,7 @@ def run_rl(args):
         critic_params = sum(p.numel() for p in critic.parameters())
         vla_params = sum(p.numel() for p in frozen_vla.parameters())
         logger.info(f"Frozen VLA: {vla_params / 1e9:.2f}B params × {world_size} GPUs")
-        logger.info(f"RLT trainable: encoder={enc_params / 1e6:.2f}M, "
+        logger.info(f"RLActionToken trainable: encoder={enc_params / 1e6:.2f}M, "
                     f"actor={actor_params / 1e6:.2f}M, critic={critic_params / 1e6:.2f}M")
         logger.info(f"Rollout parallelism: {world_size} ranks × {args.num_envs} envs × "
                     f"{args.G} episodes/rank = {world_size * args.G} episodes/iter")
@@ -123,7 +122,7 @@ def run_rl(args):
 
     # WandB (main rank only)
     if args.use_wandb and is_main:
-        run_name = args.run_name or f"rlt_rl_{args.suite}_task{args.task_id}"
+        run_name = args.run_name or f"action_token_rl_{args.suite}_task{args.task_id}"
         wandb.init(project=args.wandb_project, name=run_name,
                    config={**vars(args), "chunk_len": chunk_len,
                            "hidden_dim": hidden_dim, "action_dim": action_dim,
@@ -152,7 +151,7 @@ def run_rl(args):
 
         # ── Each rank collects G episodes in parallel ────────
         group_seed = args.seed + iteration * 1000 + rank * 100
-        local_episodes = rlt_collect_group(
+        local_episodes = action_token_collect_group(
             frozen_vla=frozen_vla,
             encoder=enc_dec,
             actor=actor,
@@ -213,7 +212,7 @@ def run_rl(args):
         epoch_stats = []
         for ppo_epoch in range(args.ppo_epochs):
             optimizer.zero_grad()
-            loss, stats = rlt_ppo_loss(
+            loss, stats = action_token_ppo_loss(
                 encoder=enc_dec,
                 actor=actor,
                 critic=critic,

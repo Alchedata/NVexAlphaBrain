@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RLT (RL Tokens) training entry for QwenOFT on LIBERO.
+"""ActionToken training entry for QwenOFT on LIBERO.
 
 Three phases:
   --phase pretrain     Encoder-decoder pretraining via reconstruction loss
@@ -15,7 +15,7 @@ Usage:
     # Phase 2 (production): off-policy TD3
     python AlphaBrain/training/reinforcement_learning/trainers/train.py --phase rl_offpolicy \
         --ckpt_path results/training/my_sft/final_model \
-        --encoder_path results/rlt_training/pretrain/checkpoints/pretrain_best/encoder.pt \
+        --encoder_path results/action_token_training/pretrain/checkpoints/pretrain_best/encoder.pt \
         --suite libero_goal --task_id 0
 """
 from AlphaBrain.training.reinforcement_learning._bootstrap import setup

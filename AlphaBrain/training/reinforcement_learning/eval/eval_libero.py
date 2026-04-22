@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Standalone offline eval for an RLT iter checkpoint on LIBERO.
+"""Standalone offline eval for an RLActionToken iter checkpoint on LIBERO.
 
 Loads:
   - frozen QwenOFT VLA from --vla_ckpt
-  - RLTEncoderDecoder from <rlt_ckpt>/encoder.pt
-  - RLTActor          from <rlt_ckpt>/actor.pt
+  - ActionTokenEncoderDecoder from <action_token_ckpt>/encoder.pt
+  - ActionTokenActor          from <action_token_ckpt>/actor.pt
 
 Runs deterministic eval across all (or selected) tasks of the suite, prints
 per-task SR, and optionally appends the result to a JSON file.
@@ -26,15 +26,15 @@ import torch
 from AlphaBrain.model.framework.base_framework import BaseFramework
 from AlphaBrain.training.reinforcement_learning.eval.eval_helpers import _eval_deterministic_local
 from AlphaBrain.training.reinforcement_learning.envs.libero_env import MAX_STEPS, get_suite_info
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import RLTActor
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import ActionTokenActor
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
 
 
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--vla_ckpt", required=True, help="QwenOFT SFT base checkpoint dir")
-    p.add_argument("--rlt_ckpt", required=True,
-                   help="RLT iter checkpoint dir containing encoder.pt and actor.pt")
+    p.add_argument("--action_token_ckpt", required=True,
+                   help="RLActionToken iter checkpoint dir containing encoder.pt and actor.pt")
     p.add_argument("--suite", default="libero_goal")
     p.add_argument("--n_eps_per_task", type=int, default=20)
     p.add_argument("--gpu", type=int, default=0)
@@ -77,8 +77,8 @@ def main():
     action_norm_stats = norm_stats[unnorm_key]["action"]
     print(f"  hidden_dim={hidden_dim} chunk_len={chunk_len} action_dim={action_dim}")
 
-    print(f"Loading encoder from {args.rlt_ckpt}/encoder.pt")
-    encoder = RLTEncoderDecoder(
+    print(f"Loading encoder from {args.action_token_ckpt}/encoder.pt")
+    encoder = ActionTokenEncoderDecoder(
         input_dim=hidden_dim,
         bottleneck_dim=args.bottleneck_dim,
         chunk_len=chunk_len,
@@ -86,15 +86,15 @@ def main():
         encoder_layers=args.encoder_layers,
         decoder_layers=args.encoder_layers,
     ).to(device)
-    enc_state = torch.load(os.path.join(args.rlt_ckpt, "encoder.pt"),
+    enc_state = torch.load(os.path.join(args.action_token_ckpt, "encoder.pt"),
                            map_location=device)
     encoder.load_state_dict(enc_state)
     encoder.eval()
     for p in encoder.parameters():
         p.requires_grad_(False)
 
-    print(f"Loading actor from {args.rlt_ckpt}/actor.pt")
-    actor = RLTActor(
+    print(f"Loading actor from {args.action_token_ckpt}/actor.pt")
+    actor = ActionTokenActor(
         bottleneck_dim=args.bottleneck_dim,
         action_dim=action_dim,
         chunk_len=chunk_len,
@@ -103,7 +103,7 @@ def main():
         fixed_std=args.fixed_std,
         prop_dim=args.prop_dim,
     ).to(device)
-    actor_state = torch.load(os.path.join(args.rlt_ckpt, "actor.pt"),
+    actor_state = torch.load(os.path.join(args.action_token_ckpt, "actor.pt"),
                              map_location=device)
     actor.load_state_dict(actor_state)
     actor.eval()
@@ -186,7 +186,7 @@ def main():
         import json
         os.makedirs(os.path.dirname(args.results_json) or ".", exist_ok=True)
         payload = {
-            "rlt_ckpt": args.rlt_ckpt,
+            "action_token_ckpt": args.action_token_ckpt,
             "vla_ckpt": args.vla_ckpt,
             "suite": args.suite,
             "n_eps_per_task": args.n_eps_per_task,

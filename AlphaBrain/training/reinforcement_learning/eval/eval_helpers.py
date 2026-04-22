@@ -6,8 +6,8 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import RLTActor
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import ActionTokenActor
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 @torch.no_grad()
 def _eval_deterministic_local(
     frozen_vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
     suite_name: str,
     task_id: int,
     action_norm_stats: dict,
@@ -128,8 +128,8 @@ def _eval_deterministic_local(
 def _eval_distributed(
     accelerator,
     frozen_vla,
-    encoder: RLTEncoderDecoder,
-    actor: RLTActor,
+    encoder: ActionTokenEncoderDecoder,
+    actor: ActionTokenActor,
     suite_name: str,
     task_id: int,
     action_norm_stats: dict,

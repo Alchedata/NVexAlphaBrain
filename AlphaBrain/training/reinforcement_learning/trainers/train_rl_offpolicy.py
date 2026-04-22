@@ -27,14 +27,14 @@ from AlphaBrain.training.reinforcement_learning.common.ckpt_io import save_rlt_c
 from AlphaBrain.training.reinforcement_learning.eval.eval_helpers import _eval_deterministic_local
 from AlphaBrain.training.reinforcement_learning.envs.libero_env import MAX_STEPS, get_suite_info
 from AlphaBrain.training.reinforcement_learning.common.replay_buffer import ReplayBuffer
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_actor_critic import (
-    RLTActor,
-    RLTCritic,
-    RLTQCritic,
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_actor_critic import (
+    ActionTokenActor,
+    ActionTokenCritic,
+    ActionTokenQCritic,
     soft_update_target,
 )
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_encoder_decoder import RLTEncoderDecoder
-from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import push_episodes_to_buffer
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_encoder_decoder import ActionTokenEncoderDecoder
+from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import push_episodes_to_buffer
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def run_rl_offpolicy(args):
         args._selected_task_ids = None
 
     # ── Create trainable modules on train_gpu ────────────
-    enc_dec = RLTEncoderDecoder(
+    enc_dec = ActionTokenEncoderDecoder(
         input_dim=hidden_dim,
         bottleneck_dim=args.bottleneck_dim,
         chunk_len=chunk_len,
@@ -147,7 +147,7 @@ def run_rl_offpolicy(args):
         for p in enc_dec.parameters():
             p.requires_grad_(False)
 
-    actor = RLTActor(
+    actor = ActionTokenActor(
         bottleneck_dim=args.bottleneck_dim,
         action_dim=action_dim,
         chunk_len=actor_chunk_len,
@@ -158,7 +158,7 @@ def run_rl_offpolicy(args):
     ).to(train_device)
 
     # Paper: Q(s, a) twin-Q critic (TD3 style)
-    q_critic = RLTQCritic(
+    q_critic = ActionTokenQCritic(
         bottleneck_dim=args.bottleneck_dim,
         action_dim=action_dim,
         chunk_len=actor_chunk_len,
@@ -180,7 +180,7 @@ def run_rl_offpolicy(args):
 
     # Also keep a lightweight V(s) critic for rollout (value estimate logging)
     # The rollout only needs a dummy critic for the episode data structure
-    dummy_critic = RLTCritic(
+    dummy_critic = ActionTokenCritic(
         bottleneck_dim=args.bottleneck_dim,
         hidden_dim=64,  # tiny, just for rollout value logging
     ).to(train_device)
@@ -210,9 +210,9 @@ def run_rl_offpolicy(args):
     if args.use_steplock:
         # Step-lock mode: persistent env pools (no BatchInferenceServer needed)
         from AlphaBrain.training.reinforcement_learning.envs.persistent_env_pool import PersistentEnvPool
-        from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_rollout_fast import (
-            rlt_collect_group_steplock,
-            rlt_collect_multitask_steplock,
+        from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_rollout_fast import (
+            action_token_collect_group_steplock,
+            action_token_collect_multitask_steplock,
         )
         rollout_servers = {}  # not used in steplock mode
         rollout_env_pools = {}
@@ -247,7 +247,7 @@ def run_rl_offpolicy(args):
         # No pre-warm needed — parallel reset in rollout handles MuJoCo init.
     else:
         # Async mode: BatchInferenceServer per GPU
-        from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import BatchInferenceServer
+        from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import BatchInferenceServer
         rollout_servers = {}
         rollout_env_pools = {}  # not used in async mode
         for gpu_id in rollout_gpu_ids:
@@ -305,7 +305,7 @@ def run_rl_offpolicy(args):
 
     # ── WandB ─────────────────────────────────────────────
     if args.use_wandb:
-        run_name = args.run_name or f"rlt_offpolicy_{args.suite}_task{args.task_id}"
+        run_name = args.run_name or f"action_token_offpolicy_{args.suite}_task{args.task_id}"
         wandb.init(project=args.wandb_project, name=run_name,
                    config={**vars(args), "chunk_len": chunk_len,
                            "hidden_dim": hidden_dim, "action_dim": action_dim,
@@ -539,7 +539,7 @@ def run_rl_offpolicy(args):
 
             if args.use_steplock:
                 # Step-lock: use plain threads (no nested ThreadPoolExecutor).
-                # One thread per GPU, each runs rlt_collect_multitask_steplock.
+                # One thread per GPU, each runs action_token_collect_multitask_steplock.
                 #
                 # Auto-chunk: if G > num_envs, run ceil(G/num_envs) sequential passes per iter.
                 # Each pass uses different seeds → different states/noise sampled.
@@ -558,7 +558,7 @@ def run_rl_offpolicy(args):
                         group_seed = args.seed + it * 1000 + gpu_id * 100 + pass_idx * 50000
                         unique_group_idx = (it * n_passes + pass_idx) * n_rollout_gpus + gpu_id
                         if len(task_list) > 1:
-                            eps = rlt_collect_multitask_steplock(
+                            eps = action_token_collect_multitask_steplock(
                                 env_pool=rollout_env_pools[gpu_id],
                                 frozen_vla=vla_copies[gpu_id],
                                 encoder=r_enc, actor=r_actor, critic=r_critic,
@@ -575,7 +575,7 @@ def run_rl_offpolicy(args):
                                 warmup_mode=_steplock_warmup[0],
                             )
                         else:
-                            eps = rlt_collect_group_steplock(
+                            eps = action_token_collect_group_steplock(
                                 env_pool=rollout_env_pools[gpu_id],
                                 frozen_vla=vla_copies[gpu_id],
                                 encoder=r_enc, actor=r_actor, critic=r_critic,
@@ -609,7 +609,7 @@ def run_rl_offpolicy(args):
                                     f"{len(eps)} eps, {n_s} success")
             else:
                 # Async mode: use ThreadPoolExecutor
-                from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import rlt_collect_group
+                from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import action_token_collect_group
                 all_eps = []
                 per_task_sr = {}
                 futs = {}
@@ -619,7 +619,7 @@ def run_rl_offpolicy(args):
                         for tid in task_list:
                             group_seed = args.seed + it * 1000 + gpu_id * 100 + tid * 10
                             fut = rollout_pool.submit(
-                                rlt_collect_group,
+                                action_token_collect_group,
                                 frozen_vla=vla_copies[gpu_id],
                                 encoder=r_enc, actor=r_actor, critic=r_critic,
                                 suite_name=args.suite, task_id=tid,
@@ -678,9 +678,9 @@ def run_rl_offpolicy(args):
     last_sync_step = 0
     sync_every_n_updates = 500  # sync weights to rollout every N TD3 updates
 
-    from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import (
-        rlt_td_actor_update,
-        rlt_td_critic_update,
+    from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import (
+        action_token_td_actor_update,
+        action_token_td_critic_update,
     )
 
     for iteration in range(1, args.max_iter + 1):
@@ -759,7 +759,7 @@ def run_rl_offpolicy(args):
             td_stats_list = []
             for td_step in range(n_updates):
                 optimizer_critic.zero_grad()
-                critic_loss, c_stats = rlt_td_critic_update(
+                critic_loss, c_stats = action_token_td_critic_update(
                     actor=actor,
                     q_critic=q_critic,
                     target_q_critic=target_q_critic,
@@ -780,7 +780,7 @@ def run_rl_offpolicy(args):
                 a_stats = {"actor_loss": 0.0, "q_actor_mean": 0.0, "bc_penalty": 0.0}
                 if (td_step + 1) % args.actor_update_freq == 0:
                     optimizer_actor.zero_grad()
-                    actor_loss, a_stats = rlt_td_actor_update(
+                    actor_loss, a_stats = action_token_td_actor_update(
                         actor=actor,
                         q_critic=q_critic,
                         replay_buffer=replay_buffer,
@@ -818,7 +818,7 @@ def run_rl_offpolicy(args):
             # ── VLA fine-tune step ──
             if (args.finetune_vla and optimizer_vla is not None
                     and iteration % args.vla_update_freq == 0):
-                from AlphaBrain.training.reinforcement_learning.algos.RLT.rlt_trainer import vla_finetune_step
+                from AlphaBrain.training.reinforcement_learning.algos.RLActionToken.action_token_trainer import vla_finetune_step
                 train_vla = vla_copies[train_gpu_id]
                 train_vla.train()
                 optimizer_vla.zero_grad()

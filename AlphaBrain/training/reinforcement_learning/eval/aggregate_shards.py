@@ -9,7 +9,7 @@ overall SR (mean across tasks).
 Usage:
     python AlphaBrain/training/reinforcement_learning/eval/aggregate_shards.py \\
         --out_dir   <DIR containing shard_*.json> \\
-        --rlt_ckpt  <ckpt path used> \\
+        --action_token_ckpt  <ckpt path used> \\
         --vla_ckpt  <vla ckpt path used> \\
         --suite     libero_goal \\
         --n_eps     50
@@ -24,7 +24,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--out_dir", required=True,
                    help="Directory containing shard_*.json; summary.json is written here.")
-    p.add_argument("--rlt_ckpt", required=True)
+    p.add_argument("--action_token_ckpt", required=True)
     p.add_argument("--vla_ckpt", required=True)
     p.add_argument("--suite", default="libero_goal")
     p.add_argument("--n_eps", type=int, required=True,
@@ -53,7 +53,7 @@ def main():
     print('=' * 60)
 
     summary = {
-        "rlt_ckpt": args.rlt_ckpt,
+        "action_token_ckpt": args.action_token_ckpt,
         "vla_ckpt": args.vla_ckpt,
         "suite": args.suite,
         "n_eps_per_task": args.n_eps,

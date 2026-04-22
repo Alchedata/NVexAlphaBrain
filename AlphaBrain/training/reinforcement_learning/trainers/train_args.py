@@ -1,4 +1,4 @@
-"""CLI args for RLT training (all three phases)."""
+"""CLI args for RLActionToken training (all three phases)."""
 import argparse
 
 
@@ -8,7 +8,7 @@ def parse_args():
     p.add_argument("--ckpt_path", type=str, required=True, help="SFT checkpoint path")
     p.add_argument("--encoder_path", type=str, default=None,
                    help="Pretrained encoder checkpoint (required for --phase rl)")
-    p.add_argument("--output_dir", type=str, default="results/rlt_training")
+    p.add_argument("--output_dir", type=str, default="results/action_token_training")
     p.add_argument("--suite", type=str, default="libero_goal",
                    choices=["libero_spatial", "libero_object", "libero_goal", "libero_10", "libero_90"])
     p.add_argument("--task_id", type=int, default=0,
@@ -20,7 +20,7 @@ def parse_args():
                    help="Train on ALL tasks in the suite (overrides --task_id). "
                         "Each iteration collects episodes from every task.")
 
-    # RLT architecture
+    # RLActionToken architecture
     p.add_argument("--bottleneck_dim", type=int, default=256)
     p.add_argument("--encoder_layers", type=int, default=2)
     p.add_argument("--encoder_heads", type=int, default=4)
@@ -55,7 +55,7 @@ def parse_args():
                          "If G_per_task > num_envs_per_task, the rollout is auto-chunked into "
                          "ceil(G_per_task / num_envs_per_task) sequential passes.")
     p.add_argument("--group_size", type=int, default=1,
-                   help="Trajectories per initial state (RLinf/SimpleVLA-RL style). "
+                   help="Trajectories per initial state. "
                         "G_per_task episodes split into G_per_task//group_size unique states, "
                         "each repeated group_size times. Default 1 = no repeat.")
     p.add_argument("--num_envs_per_task", "--num_envs", dest="num_envs_per_task", type=int, default=4,
@@ -95,7 +95,7 @@ def parse_args():
                    help="Batch size for sampling from replay buffer")
     p.add_argument("--tau", type=float, default=0.005,
                    help="Target critic soft update coefficient")
-    # TD3/RLT paper specific
+    # TD3/RL Token paper specific
     p.add_argument("--beta", type=float, default=1.0,
                    help="BC regularization coefficient (paper Eq. 5): β‖a - ã‖². "
                         "Use ≥1.0 for stable training; 0.1 is too weak and allows policy drift.")
@@ -106,7 +106,7 @@ def parse_args():
     p.add_argument("--target_noise_clip", type=float, default=0.5,
                    help="Clip range for target policy noise")
     p.add_argument("--reward_coef", type=float, default=1.0,
-                   help="Reward multiplier for success (SimpleVLA-RL/RLinf use 5.0)")
+                   help="Reward multiplier for success")
     p.add_argument("--fixed_std", type=float, default=0.1,
                    help="Fixed Gaussian std for actor exploration (paper: small fixed std)")
     # Full VLA fine-tune (off-policy TD3 + VLA gradient via re-encoding)

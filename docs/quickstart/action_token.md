@@ -16,19 +16,19 @@ Two-phase TD3 online RL fine-tuning on a pretrained QwenOFT VLA — encoder pret
 
 ```bash
 # default GPU layout: 0,2,3,4,5 rollout, 1 train
-bash scripts/run_rl_scripts/run_rlt_5traj_alltasks.sh
+bash scripts/run_rl_scripts/run_action_token_5traj_alltasks.sh
 
 # custom GPU layout (rollout0,rollout1,...,train)
-bash scripts/run_rl_scripts/run_rlt_5traj_alltasks.sh "0,1,2,3,4,5"
+bash scripts/run_rl_scripts/run_action_token_5traj_alltasks.sh "0,1,2,3,4,5"
 ```
 
-Checkpoints: `results/rlt_training_TD3/<run>_<ts>/rl_offpolicy/checkpoints/rl_offpolicy_iter_NNNNN/`.
+Checkpoints: `results/action_token_training_TD3/<run>_<ts>/rl_offpolicy/checkpoints/rl_offpolicy_iter_NNNNN/`.
 
 ## Evaluate
 
 ```bash
-bash scripts/run_rl_scripts/run_eval_rlt.sh \
-    results/rlt_training_TD3/rlt_5traj_alltasks_release_0414_1727/rl_offpolicy
+bash scripts/run_rl_scripts/run_eval_action_token.sh \
+    results/action_token_training_TD3/action_token_5traj_alltasks_release_0414_1727/rl_offpolicy
 ```
 
 Results: `<RUN_DIR>/eval_rl_offpolicy_iter_<NNNNN>/summary.json`.

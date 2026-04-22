@@ -1,10 +1,10 @@
 """
-Episode rollout for GRPO — SimpleVLA-RL style.
+Episode rollout for GRPO.
 
 Key design:
   - Each episode stores trajectory as tensors: (traj_len, ...) for batched forward
   - finish_step tracks actual episode length for masking
-  - Multiprocess env workers (one process per env, like SimpleVLA-RL)
+  - Multiprocess env workers (one process per env)
   - Gaussian policy: a ~ N(μ, σ²I), log_prob = -||a-μ||²/(2σ²)
 """
 
@@ -57,7 +57,7 @@ class StepRecord:
     norm_action:   np.ndarray        # (chunk_len, 7) normalized, sampled
     old_log_prob:  float             # scalar
     value:         float = 0.0       # V(s) from critic (used by PPO+GAE)
-    action_token_ids: np.ndarray = None  # (n_action_tokens,) discrete token IDs (SimpleVLA-RL)
+    action_token_ids: np.ndarray = None  # (n_action_tokens,) discrete token IDs
 
 
 @dataclass

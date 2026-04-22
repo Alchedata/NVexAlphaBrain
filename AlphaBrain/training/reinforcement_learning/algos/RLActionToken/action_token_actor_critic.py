@@ -1,5 +1,7 @@
 """
-RLT Actor-Critic following the RLT paper (Physical Intelligence).
+ActionToken Actor-Critic, following the RL Token paper (Physical Intelligence)
+closely on the actor/critic side (the deviations from the paper live in
+action_token_encoder_decoder.py and action_token_trainer.py).
 
 Key design choices from the paper:
   - Actor (Eq. 4): π_θ(a | x, ã) = N(μ_θ(x, ã), σ²I)
@@ -16,9 +18,9 @@ import torch
 import torch.nn as nn
 
 
-class RLTActor(nn.Module):
+class ActionTokenActor(nn.Module):
     """
-    RLT actor from paper (Eq. 4-5).
+    ActionToken actor from paper (Eq. 4-5).
 
     π_θ(a_{1:C} | x, ã_{1:C}) = N(μ_θ(x, ã_{1:C}), σ²I)
 
@@ -153,9 +155,9 @@ def soft_update_target(source: nn.Module, target: nn.Module, tau: float = 0.005)
             tp.data.mul_(1.0 - tau).add_(sp.data, alpha=tau)
 
 
-class RLTQCritic(nn.Module):
+class ActionTokenQCritic(nn.Module):
     """
-    Twin Q-critic from RLT paper (Eq. 3, following TD3).
+    Twin Q-critic from RL Token paper (Eq. 3, following TD3).
 
     Q_ψ(x, a_{1:C}) takes the RL token state AND the action chunk as input.
     Contains two independent Q-networks; use min(Q1, Q2) for target values.
@@ -238,7 +240,7 @@ class RLTQCritic(nn.Module):
 
 # ── Keep old V(s) critic for backward compatibility with PPO path ──
 
-class RLTCritic(nn.Module):
+class ActionTokenCritic(nn.Module):
     """State value estimator V(s) from rl_token. (Legacy, for PPO path only.)"""
 
     def __init__(

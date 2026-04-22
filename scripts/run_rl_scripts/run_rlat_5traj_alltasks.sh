@@ -21,7 +21,7 @@ ENCODER_PATH="${PRETRAIN_DIR}/checkpoints/pretrain_best/encoder.pt"
 
 RUN_NAME="rlt_5traj_alltasks_release"
 TIMESTAMP=$(date +%m%d_%H%M)
-OUTPUT_DIR="results/rlt_training_TD3/${RUN_NAME}_${TIMESTAMP}/rl_offpolicy"
+OUTPUT_DIR="results/action_token_training_TD3/${RUN_NAME}_${TIMESTAMP}/rl_offpolicy"
 
 if [ ! -d "${CKPT_PATH}" ]; then
     echo "ERROR: 5-traj VLA ckpt not found: ${CKPT_PATH}"
@@ -54,7 +54,7 @@ if [ ! -f "${ENCODER_PATH}" ]; then
         --seed 42 \
         --use_wandb \
         --wandb_project AlphaBrain_RLT \
-        --run_name rlt_5traj_alltasks_pretrain
+        --run_name action_token_5traj_alltasks_pretrain
     if [ ! -f "${ENCODER_PATH}" ]; then
         echo "ERROR: pretrain finished but encoder missing at ${ENCODER_PATH}"
         exit 1
