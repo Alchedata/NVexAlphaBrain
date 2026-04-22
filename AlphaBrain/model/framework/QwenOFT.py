@@ -16,8 +16,8 @@ Key Points:
 
 
 Note: How to add special tokens to Qwen2.5:
-  download our model checkpoint with special tokens added: https://huggingface.co/StarVLA/Qwen2.5-VL-3B-Instruct-Action
-  or /starVLA/model/modules/vlm/tools/add_qwen_special_tokens/README.md （adpat a little code)
+  download our model checkpoint with special tokens added: https://huggingface.co/AlphaBrain/Qwen2.5-VL-3B-Instruct-Action
+  or /AlphaBrain/model/modules/vlm/tools/add_qwen_special_tokens/README.md （adpat a little code)
   
 """
 from typing import List
