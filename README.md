@@ -166,23 +166,49 @@ AlphaBrain is a modular PyTorch framework for embodied intelligence research. It
 
 ## 🖥 Demo
 
-The Nvex investor demo is a 7-page interactive experience demonstrating the full failure-to-fix loop.
+The Nvex demo is now a 7-page interactive experience with a working Milestone 2 backend path behind it.
 
-**Run locally:**
+The UI covers: Project Hub → Project Overview → Failure Map → Patch Plan → Iteration Runner → Improvement Report → Platform Memory.
+
+### Run The Full Demo Locally
+
+Start the backend first:
+
+```bash
+./.venv/bin/python -m uvicorn nvex_server.app:app --reload --port 8000
+```
+
+Then start the React app:
 
 ```bash
 cd demo
 npm install
-npm run dev   # http://localhost:5173
+npm run dev   # http://127.0.0.1:5173
 ```
 
-**Or open the standalone file directly:**
+The Vite dev server proxies `/api` requests to `http://127.0.0.1:8000`, so the React pages consume live demo-state endpoints rather than reading only static mock data.
+
+### Backend Endpoints
+
+The local backend currently exposes:
+
+- `GET /health`
+- `GET /api/demo/state`
+- `POST /api/eval/import`
+- `POST /api/plan/generate`
+- `POST /api/iteration/start`
+- `GET /api/iteration/{id}/status`
+- `GET /api/report/{iteration_id}`
+
+### Standalone Demo
+
+If you only want the static investor narrative, you can still open the standalone HTML directly:
 
 ```bash
 open demo/nvex-demo.html
 ```
 
-The demo covers: Project Hub → Project Overview → Failure Map → Patch Plan → Iteration Runner → Improvement Report → Platform Memory. All data is mocked; a real AlphaBrain execution path can be wired in at Milestone 2.
+That standalone file is still useful for quick walkthroughs, but the React app is now the primary M2 demo surface.
 
 ---
 
@@ -237,6 +263,14 @@ bash scripts/run_rl_scripts/run_action_token_5traj_alltasks.sh
 ```bash
 python -c "import AlphaBrain; print('ok')"
 ```
+
+### Milestone 2 Backend Notes
+
+Milestone 2 is now implemented in the repo:
+
+- `nvex_server/` provides schema contracts, artifact import, patch-plan generation, iteration dispatch, status polling, improvement reports, and a seeded demo state.
+- `benchmarks/LIBERO/eval/eval_libero.py` now writes a structured `eval_results.json` artifact that can be imported as an `EvalRun`.
+- The current demo uses seeded before/after LIBERO Kitchen artifacts (`62% -> 74%`) to drive the failure map, patch plan, runner, report, and platform memory pages through the backend.
 
 Full documentation: **[alphabraingroup.github.io/AlphaBrain](https://alphabraingroup.github.io/AlphaBrain/)**
 
