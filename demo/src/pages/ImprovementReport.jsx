@@ -29,11 +29,11 @@ export default function ImprovementReport() {
 
         <div className="card">
           <div className="section-title">Assets Created</div>
-          <div className="asset-list">
+          <div className="assets-created">
             {assets.map((asset) => (
-              <div key={asset.name} className="asset-item">
-                <strong style={{ textTransform: 'capitalize' }}>{asset.type}</strong>: {asset.name}
-              </div>
+              <span key={asset.name} className={`asset-chip ${asset.type}`}>
+                {asset.type}: {asset.name}
+              </span>
             ))}
           </div>
           <div className="divider" />

@@ -20,13 +20,13 @@
 | Config system (YAML + modes + CLI overrides) | ✅ Complete | |
 | Deployment module (model_server, upload) | ✅ Partial | Basic server exists, not productionized |
 | Nvex investor demo HTML (`demo/nvex-demo.html`) | ✅ Complete | All 7 pages, fully interactive |
-| React demo app (`demo/src/`) | ⚠️ Skeleton | App.jsx + main.jsx only; all pages/components missing |
+| React demo app (`demo/src/`) | ✅ Complete | All 7 pages implemented with shared components, mock data, and build validation |
 | Nvex backend / orchestration logic | ❌ Not started | All intelligence is mocked in the HTML demo |
 | Real AlphaBrain ↔ Nvex job interface | ❌ Not started | |
 
 ---
 
-## Milestone 1 — Narrative MVP (Demo-Ready) ✅ ~Complete
+## Milestone 1 — Narrative MVP (Demo-Ready) ✅ Complete
 
 **Goal:** A polished, clickable demo that tells the full Nvex story end-to-end. All data can be mocked or pre-generated.
 
@@ -35,8 +35,8 @@
 - [x] README.md rewritten to position Nvex as orchestration layer for both investors and customers
 - [x] PRD finalized (`prd.md`)
 - [x] Frontend wireframe/IA documented (`frontend-design.md`)
-- [ ] React demo app — build all 7 pages and components to match `nvex-demo.html`
-- [ ] Add a second demo scenario (non-LIBERO) to show breadth
+- [x] React demo app — build all 7 pages and components to match `nvex-demo.html`
+- [x] Add a second demo scenario (non-LIBERO) to show breadth
 
 ### React App Components Needed
 ```
@@ -60,6 +60,12 @@ demo/src/
 └── data/
     └── mockData.js
 ```
+
+### Milestone 1 Exit Criteria Reached
+- React demo builds successfully with Vite (`npm run build`)
+- Shared component layer now covers KPI cards, failure clusters, radar chart, timeline steps, and asset cards
+- The demo includes breadth beyond LIBERO via an additional RoboCasa scenario on the hub
+- The standalone HTML and React demo now tell the same investor narrative at the page level
 
 ---
 
@@ -160,7 +166,6 @@ demo/src/
 
 | Priority | Task | Milestone | Effort |
 |----------|------|-----------|--------|
-| 🔴 High | Build React demo app (all 7 pages) | M1 | ~3 days |
 | 🔴 High | Define EvalRun + PatchPlan JSON schemas | M2 | ~0.5 day |
 | 🔴 High | AlphaBrain eval artifact exporter | M2A | ~1 day |
 | 🟡 Med | PatchPlanGenerator (rule-based v1) | M2B | ~2 days |

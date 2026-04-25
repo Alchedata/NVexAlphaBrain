@@ -1,8 +1,9 @@
 import KPICard from '../components/KPICard';
+import AssetCard from '../components/AssetCard';
 import { D } from '../data/mockData.js';
 
 export default function ProjectOverview() {
-  const { project, rootCauses } = D;
+  const { project, rootCauses, availableAssets } = D;
 
   return (
     <section className="page-shell page-enter">
@@ -22,6 +23,15 @@ export default function ProjectOverview() {
         <div className="insight-list">
           {rootCauses.map((cause) => (
             <div key={cause} className="insight-item">{cause}</div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="section-title">Available Assets</div>
+        <div className="card-grid-4">
+          {availableAssets.map((asset) => (
+            <AssetCard key={asset.label} {...asset} />
           ))}
         </div>
       </div>

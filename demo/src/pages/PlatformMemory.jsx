@@ -1,4 +1,5 @@
 import { D } from '../data/mockData.js';
+import AssetCard from '../components/AssetCard';
 
 export default function PlatformMemory() {
   const { stats, recipes, templates, failures } = D.memory;
@@ -11,10 +12,10 @@ export default function PlatformMemory() {
       </div>
 
       <div className="card-grid-4">
-        <div className="card"><div className="card-title">Recipes</div><div className="card-value">{stats.recipes}</div></div>
-        <div className="card"><div className="card-title">Templates</div><div className="card-value">{stats.templates}</div></div>
-        <div className="card"><div className="card-title">Failure Patterns</div><div className="card-value">{stats.patterns}</div></div>
-        <div className="card"><div className="card-title">Projects</div><div className="card-value">{stats.projects}</div></div>
+        <AssetCard label="Recipes" value={stats.recipes} tone="cyan" sub="Reusable patch patterns" />
+        <AssetCard label="Templates" value={stats.templates} tone="blue" sub="Repeatable pipelines" />
+        <AssetCard label="Failure Patterns" value={stats.patterns} tone="red" sub="Known ontology nodes" />
+        <AssetCard label="Projects" value={stats.projects} tone="green" sub="Projects contributing memory" />
       </div>
 
       <div className="memory-grid">

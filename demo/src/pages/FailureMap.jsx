@@ -40,6 +40,38 @@ export default function FailureMap() {
           </div>
         </div>
       </div>
+
+      <div className="two-col-grid">
+        <div className="card">
+          <div className="section-title">Root-Cause Hypotheses</div>
+          <div className="root-cause-list">
+            {D.rootCauses.map((cause, index) => (
+              <div key={cause} className="root-cause-item">
+                <div className="rci-num">{index + 1}</div>
+                <div className="rci-text">{cause}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="section-title">Representative Episodes</div>
+          <div className="episode-grid">
+            {D.representativeEpisodes.map((episode) => (
+              <div key={episode.id} className="episode-card">
+                <div className="episode-thumb">{episode.cluster}</div>
+                <div className="episode-label">{episode.label} · {episode.id}</div>
+                <div className="episode-meta">Cluster {episode.cluster} · {episode.detail}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="card diagnosis-card">
+        <div className="diag-label">Nvex Diagnosis</div>
+        <div className="diag-text">{D.diagnosis}</div>
+      </div>
     </section>
   );
 }

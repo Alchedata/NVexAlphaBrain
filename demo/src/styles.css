@@ -210,6 +210,55 @@ svg { display: block; }
   gap: 16px;
 }
 
+.feature-list,
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+
+.feature-name,
+.project-list-name {
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.feature-copy,
+.project-list-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.project-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.project-list-item:hover {
+  background: var(--surf-hi);
+  border-color: var(--border-hi);
+}
+
+.project-list-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--a3);
+}
+
 .panel-stack {
   display: flex;
   flex-direction: column;
@@ -318,6 +367,32 @@ svg { display: block; }
 .console-item.active { color: var(--a3); }
 .console-item.log { color: var(--t2); }
 
+.asset-card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.asset-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t3);
+}
+
+.asset-card-value {
+  margin-top: 10px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.asset-card-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
 .pill-row {
   display: flex;
   flex-wrap: wrap;
@@ -343,6 +418,110 @@ svg { display: block; }
 .kpi-callout-value { font-size: 48px; font-weight: 700; letter-spacing: -1px; }
 .kpi-callout-copy { color: var(--t2); max-width: 36rem; }
 
+.root-cause-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.root-cause-item {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+}
+
+.rci-num {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(99,102,241,0.16);
+  color: var(--a3);
+  font-weight: 700;
+}
+
+.rci-text {
+  color: var(--t2);
+}
+
+.episode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.episode-card {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+}
+
+.episode-thumb {
+  height: 92px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.24), rgba(244,63,94,0.18));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t1);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.episode-label {
+  font-weight: 600;
+}
+
+.episode-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.diagnosis-card {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06));
+}
+
+.diag-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--a3);
+  margin-bottom: 12px;
+}
+
+.diag-text {
+  color: var(--t1);
+  max-width: 70rem;
+}
+
+.assets-created {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.asset-chip {
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.asset-chip.recipe { background: rgba(6,182,212,0.08); color: var(--cyan); border-color: rgba(6,182,212,0.25); }
+.asset-chip.template { background: rgba(99,102,241,0.08); color: var(--a3); border-color: rgba(99,102,241,0.25); }
+.asset-chip.failure { background: rgba(244,63,94,0.08); color: var(--red); border-color: rgba(244,63,94,0.2); }
+
 @media (max-width: 900px) {
   .hero-panel,
   .cluster-grid,
@@ -352,6 +531,10 @@ svg { display: block; }
   .card-grid-4,
   .card-grid-3,
   .card-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .episode-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,8 +1,9 @@
 import KPICard from '../components/KPICard';
+import AssetCard from '../components/AssetCard';
 import { D } from '../data/mockData.js';
 
 export default function Home({ onNav }) {
-  const { project } = D;
+  const { project, featuredValue, recentProjects, availableAssets } = D;
 
   return (
     <section className="page-shell page-enter">
@@ -40,6 +41,47 @@ export default function Home({ onNav }) {
         <KPICard title="Failure Clusters" value={project.kpi.failClusters} sub="Distinct issue groups" />
         <KPICard title="Confidence" value={`${Math.round(project.kpi.confidence * 100)}%`} sub="Diagnosis confidence" />
         <KPICard title="Platform Assets" value={project.assets.runs + project.assets.recipes + project.assets.templates} sub="Reusable artifacts generated" />
+      </div>
+
+      <div className="two-col-grid">
+        <div className="card">
+          <div className="section-title">Featured Value</div>
+          <div className="feature-list">
+            {featuredValue.map((item) => (
+              <div key={item.title} className="feature-item">
+                <div className="feature-name">{item.title}</div>
+                <div className="feature-copy">{item.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="section-title">Recent Projects</div>
+          <div className="project-list">
+            {recentProjects.map((entry) => (
+              <button key={entry.name} className="project-list-item" onClick={() => onNav(entry.route)}>
+                <div>
+                  <div className="project-list-name">{entry.name}</div>
+                  <div className="project-list-meta">{entry.checkpoint} · {entry.suite}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="project-list-score">{entry.successRate}%</div>
+                  <div className="project-list-meta">{entry.status}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="section-title">Available Assets</div>
+        <div className="card-grid-4">
+          {availableAssets.map((asset) => (
+            <AssetCard key={asset.label} {...asset} />
+          ))}
+        </div>
       </div>
     </section>
   );
