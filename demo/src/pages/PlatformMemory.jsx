@@ -1,8 +1,9 @@
-import { D } from '../data/mockData.js';
 import AssetCard from '../components/AssetCard';
+import { useNvexRuntime } from '../data/NvexRuntimeContext.jsx';
 
 export default function PlatformMemory() {
-  const { stats, recipes, templates, failures } = D.memory;
+  const { data } = useNvexRuntime();
+  const { stats, recipes, templates, failures } = data.memory;
 
   return (
     <section className="page-shell page-enter">

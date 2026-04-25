@@ -1,9 +1,10 @@
 import KPICard from '../components/KPICard';
 import AssetCard from '../components/AssetCard';
-import { D } from '../data/mockData.js';
+import { useNvexRuntime } from '../data/NvexRuntimeContext.jsx';
 
 export default function Home({ onNav }) {
-  const { project, featuredValue, recentProjects, availableAssets } = D;
+  const { data } = useNvexRuntime();
+  const { project, featuredValue, recentProjects, availableAssets } = data;
 
   return (
     <section className="page-shell page-enter">

@@ -1,7 +1,8 @@
-import { D } from '../data/mockData.js';
+import { useNvexRuntime } from '../data/NvexRuntimeContext.jsx';
 
 export default function PatchPlan() {
-  const { patchPlan } = D;
+  const { data } = useNvexRuntime();
+  const { patchPlan } = data;
 
   return (
     <section className="page-shell page-enter">

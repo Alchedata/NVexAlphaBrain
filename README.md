@@ -263,6 +263,26 @@ AlphaBrain is forked from [starVLA](https://github.com/starVLA/starVLA) and buil
 ## 📝 Citation
 
 ```bibtex
+@article{AgenticAIEval2026,
+  title   = {Evaluating the Autonomous Mind, A Multi-Dimensional Framework for Agentic AI Readiness},
+  author  = {Fei Wang, Salon Ren and Eric Wang},
+  year    = {2026},
+  url     = {https://github.com/Alchedata/agentic-ai-evaluation},
+  license = {MIT}
+}
+```
+
+```bibtex
+@article{RLEnvEval2026,
+  title   = {The Environment Layer: Building Infrastructure for Agentic AI Training},
+  author  = {Fei Wang, Salon Ren, Eric Wang and Michael Zhang},
+  year    = {2026},
+  url     = {https://github.com/Alchedata/rl-env-white-papern},
+  license = {MIT}
+}
+```
+
+```bibtex
 @software{AlphaBrain2026,
   title   = {AlphaBrain: A Modular Open-Source Framework for Embodied Intelligence Research},
   author  = {AlphaBrain Community},
@@ -272,15 +292,7 @@ AlphaBrain is forked from [starVLA](https://github.com/starVLA/starVLA) and buil
 }
 ```
 
-```bibtex
-@article{AlphaBrain2026,
-  title   = {Evaluating the Autonomous Mind, A Multi-Dimensional Framework for Agentic AI Readiness},
-  author  = {Fei Wang, Salon Ren and Eric Wang},
-  year    = {2026},
-  url     = {https://github.com/Alchedata/agentic-ai-evaluation},
-  license = {MIT}
-}
-```
+
 
 
 ---

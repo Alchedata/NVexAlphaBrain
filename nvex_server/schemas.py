@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -21,6 +22,7 @@ ExecutionBackend = Literal[
 JobStatus = Literal["queued", "running", "completed", "failed"]
 Severity = Literal["low", "medium", "high", "critical"]
 TrainingStrategy = Literal["continual_learning", "fine_tune", "vlm_cotrain", "world_model_verification"]
+ArtifactType = Literal["auto", "generic_json", "libero_eval_json", "robocasa365_aggregate", "robocasa_tabletop_stats", "libero_log"]
 
 
 class ArtifactBundle(BaseModel):
@@ -29,6 +31,7 @@ class ArtifactBundle(BaseModel):
     videos: list[str] = Field(default_factory=list)
     logs: list[str] = Field(default_factory=list)
     metrics_json: str | None = None
+    source_path: str | None = None
 
 
 class TaskBreakdownEntry(BaseModel):
@@ -38,6 +41,7 @@ class TaskBreakdownEntry(BaseModel):
     task_name: str
     success_rate: float = Field(ge=0.0, le=1.0)
     attempts: int | None = Field(default=None, ge=0)
+    successes: int | None = Field(default=None, ge=0)
 
 
 class FailureCluster(BaseModel):
@@ -120,6 +124,7 @@ class IterationArtifacts(BaseModel):
     logs: list[str] = Field(default_factory=list)
     videos: list[str] = Field(default_factory=list)
     eval_runs: list[str] = Field(default_factory=list)
+    metadata_path: str | None = None
 
 
 class IterationJob(BaseModel):
@@ -132,7 +137,12 @@ class IterationJob(BaseModel):
     status: JobStatus
     execution_backend: ExecutionBackend
     config: dict[str, Any] = Field(default_factory=dict)
+    command: str | None = None
+    log_path: str | None = None
+    pid: int | None = None
+    exit_code: int | None = None
     output_checkpoint: str | None = None
+    after_eval_run_id: str | None = None
     result_summary: IterationResultSummary | None = None
     artifacts: IterationArtifacts = Field(default_factory=IterationArtifacts)
     created_at: datetime = Field(default_factory=utc_now)
@@ -161,7 +171,60 @@ class ImprovementReport(BaseModel):
     success_after: float = Field(ge=0.0, le=1.0)
     uplift: float = Field(ge=0.0, le=1.0)
     summary: str
+    changes: list[str] = Field(default_factory=list)
+    next_target: str | None = None
     assets_created: list[ReusableAsset] = Field(default_factory=list)
+
+
+class ProjectContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    checkpoint: str
+    domain: str
+    suite: str
+    status: str
+    status_note: str
+    top_risk: str
+    next_action: str
+
+
+class PlatformMemoryStats(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    recipes: int = Field(ge=0)
+    templates: int = Field(ge=0)
+    patterns: int = Field(ge=0)
+    projects: int = Field(ge=0)
+
+
+class PlatformMemorySnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    recipes: list[str] = Field(default_factory=list)
+    templates: list[str] = Field(default_factory=list)
+    failures: list[str] = Field(default_factory=list)
+    stats: PlatformMemoryStats
+
+
+class EvalImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    eval_run: EvalRun | None = None
+    artifact_path: str | None = None
+    artifact_type: ArtifactType = "auto"
+    project_id: str | None = None
+    benchmark_suite: str | None = None
+    checkpoint: str | None = None
+    run_id: str | None = None
+
+    @model_validator(mode="after")
+    def validate_input(self) -> "EvalImportRequest":
+        if self.eval_run is None and self.artifact_path is None:
+            raise ValueError("either eval_run or artifact_path must be provided")
+        if self.artifact_path is not None and not Path(self.artifact_path).exists():
+            raise ValueError(f"artifact_path does not exist: {self.artifact_path}")
+        return self
 
 
 class PlanGenerationRequest(BaseModel):
@@ -184,3 +247,14 @@ class IterationStartRequest(BaseModel):
     checkpoint: str
     execution_backend: ExecutionBackend | None = None
     config: dict[str, Any] = Field(default_factory=dict)
+
+
+class DemoStateResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project: ProjectContext
+    current_eval_run: EvalRun
+    patch_plan: PatchPlan
+    iteration_job: IterationJob
+    report: ImprovementReport
+    platform_memory: PlatformMemorySnapshot

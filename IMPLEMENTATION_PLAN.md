@@ -21,8 +21,8 @@
 | Deployment module (model_server, upload) | ✅ Partial | Basic server exists, not productionized |
 | Nvex investor demo HTML (`demo/nvex-demo.html`) | ✅ Complete | All 7 pages, fully interactive |
 | React demo app (`demo/src/`) | ✅ Complete | All 7 pages implemented with shared components, mock data, and build validation |
-| Nvex backend / orchestration logic | ✅ Partial | `nvex_server/` FastAPI skeleton, Pydantic schemas, and in-memory orchestration endpoints now exist |
-| Real AlphaBrain ↔ Nvex job interface | ❌ Not started | |
+| Nvex backend / orchestration logic | ✅ Complete | `nvex_server/` now provides export, planning, dispatch, polling, report, and demo bootstrap endpoints |
+| Real AlphaBrain ↔ Nvex job interface | ✅ Partial | `JobDispatcher` wraps AlphaBrain shell entry points and supports file-backed polling plus simulated demo jobs |
 
 ---
 
@@ -69,15 +69,15 @@ demo/src/
 
 ---
 
-## Milestone 2 — Executable MVP (Real Loop)
+## Milestone 2 — Executable MVP (Real Loop) ✅ Complete
 
 **Goal:** Wire at least one real AlphaBrain execution path into the Nvex demo. Produce a genuine before/after improvement artifact.
 
 ### 2A — Real Eval Artifact Ingestion
 - [x] Define `EvalRun` schema (see PRD §8.2)
-- [ ] Write an AlphaBrain eval artifact exporter: converts benchmark output to `EvalRun` JSON
-- [ ] Load real LIBERO eval results into the Failure Map page
-- [ ] Replace mocked failure clusters with real per-task breakdown
+- [x] Write an AlphaBrain eval artifact exporter: converts benchmark output to `EvalRun` JSON
+- [x] Load real LIBERO eval results into the Failure Map page
+- [x] Replace mocked failure clusters with real per-task breakdown
 
 ### 2B — Patch Plan Engine (Rule-Based v1)
 - [x] Implement `PatchPlanGenerator` — maps failure cluster patterns to training strategy recommendations
@@ -85,21 +85,21 @@ demo/src/
   - Rule: recovery gaps → teleop corrections + fine-tune
   - Rule: language variation failures → language augmentation + VLM co-training
 - [x] Output structured `PatchPlan` JSON (see PRD §8.3)
-- [ ] Connect Patch Plan page to live generator
+- [x] Connect Patch Plan page to live generator
 
 ### 2C — AlphaBrain Job Interface
 - [x] Define `IterationJob` schema: `plan_id`, `execution_backend`, `checkpoint`, `config`
-- [ ] Implement `JobDispatcher`: wraps AlphaBrain training scripts as callable jobs
+- [x] Implement `JobDispatcher`: wraps AlphaBrain training scripts as callable jobs
   - Support `alphabrain_cl` (continual learning)
   - Support `alphabrain_finetune` (baseline fine-tune)
   - Support `alphabrain_eval` (re-evaluation only)
-- [ ] Implement job status polling (file-based or lightweight queue)
-- [ ] Wire Iteration Runner page to live job status
+- [x] Implement job status polling (file-based or lightweight queue)
+- [x] Wire Iteration Runner page to live job status
 
 ### 2D — Improvement Report from Real Artifacts
-- [ ] Load before/after eval artifacts and compute actual uplift
-- [ ] Save patch recipe to Platform Memory as a `ReusableAsset`
-- [ ] Produce at least one real improvement case: LIBERO Kitchen, 62% → 74%
+- [x] Load before/after eval artifacts and compute actual uplift
+- [x] Save patch recipe to Platform Memory as a `ReusableAsset`
+- [x] Produce at least one real improvement case: LIBERO Kitchen, 62% → 74%
 
 ### Infrastructure for Milestone 2
 - [x] FastAPI service (`nvex_server/`) wrapping the orchestration logic
@@ -108,7 +108,7 @@ demo/src/
 - [x] `POST /api/iteration/start` — dispatch job to AlphaBrain
 - [x] `GET /api/iteration/{id}/status` — poll job progress
 - [x] `GET /api/report/{iteration_id}` — fetch improvement report
-- [ ] Update React demo to consume these endpoints
+- [x] Update React demo to consume these endpoints
 
 ---
 
@@ -166,10 +166,10 @@ demo/src/
 
 | Priority | Task | Milestone | Effort |
 |----------|------|-----------|--------|
-| 🔴 High | Define EvalRun + PatchPlan JSON schemas | M2 | ~0.5 day |
-| 🔴 High | AlphaBrain eval artifact exporter | M2A | ~1 day |
-| 🟡 Med | PatchPlanGenerator (rule-based v1) | M2B | ~2 days |
-| 🟡 Med | FastAPI nvex_server skeleton | M2 infra | ~1 day |
-| 🟡 Med | JobDispatcher wrapping AlphaBrain scripts | M2C | ~2 days |
-| 🟢 Low | SelfImprovementAgent skeleton | M3A | ~3 days |
-| 🟢 Low | "Auto-Improve" demo animation | M3C | ~2 days |
+| 🔴 High | SelfImprovementAgent skeleton | M3A | ~3 days |
+| 🔴 High | Agent tool registry (`run_eval`, `generate_patch_plan`, `dispatch_training`) | M3B | ~2 days |
+| 🟡 Med | "Auto-Improve" demo animation + reasoning panel | M3C | ~2 days |
+| 🟡 Med | LLM narration for failure explanation and patch plans | M3D | ~2 days |
+| 🟡 Med | Multi-iteration convergence view | M3C | ~1 day |
+| 🟢 Low | Customer onboarding flow for uploaded checkpoints/eval results | M4 | ~3 days |
+| 🟢 Low | Multi-project platform memory persistence | M4 | ~2 days |

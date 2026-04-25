@@ -1,7 +1,8 @@
-import { D } from '../data/mockData.js';
+import { useNvexRuntime } from '../data/NvexRuntimeContext.jsx';
 
 export default function ImprovementReport() {
-  const { before, after, changes, assets, nextIter } = D.report;
+  const { data } = useNvexRuntime();
+  const { before, after, changes, assets, nextIter } = data.report;
   const uplift = after.success - before.success;
 
   return (
