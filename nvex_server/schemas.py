@@ -6,6 +6,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+AgentStepType = Literal["eval", "diagnose", "plan", "dispatch", "verify", "memory", "stop_check"]
+AgentStepStatus = Literal["pending", "running", "completed", "failed", "skipped"]
+AgentRunStatus = Literal["idle", "running", "completed", "stopped"]
+
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
@@ -258,3 +262,84 @@ class DemoStateResponse(BaseModel):
     iteration_job: IterationJob
     report: ImprovementReport
     platform_memory: PlatformMemorySnapshot
+
+
+# ---------------------------------------------------------------------------
+# Milestone 3 — Self-Improving Agent schemas
+# ---------------------------------------------------------------------------
+
+
+class FailureDiagnosis(BaseModel):
+    """Structured output of the FailureDiagnoser tool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    primary_cluster_id: str
+    primary_cluster_label: str
+    root_causes: list[str] = Field(default_factory=list)
+    recommended_strategy: TrainingStrategy
+    recommended_backend: ExecutionBackend
+    reasoning: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class AgentStep(BaseModel):
+    """A single step in the autonomous improvement loop."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    step_id: str
+    step_type: AgentStepType
+    status: AgentStepStatus = "pending"
+    label: str
+    message: str = ""
+    inputs: dict[str, Any] = Field(default_factory=dict)
+    outputs: dict[str, Any] = Field(default_factory=dict)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class LoopIteration(BaseModel):
+    """One complete pass of the eval → diagnose → plan → train → verify cycle."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    iteration_index: int = Field(ge=1)
+    patch_strategy: str
+    patch_cluster: str
+    eval_before: float = Field(ge=0.0, le=1.0)
+    eval_after: float | None = None
+    steps: list[AgentStep] = Field(default_factory=list)
+    status: Literal["pending", "running", "completed", "failed"] = "pending"
+
+
+class AgentRunState(BaseModel):
+    """Top-level state object for a SelfImprovementAgent run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    agent_run_id: str
+    project_id: str
+    target_kpi: float = Field(ge=0.0, le=1.0)
+    max_iterations: int = Field(ge=1)
+    diminishing_returns_threshold: float = Field(ge=0.0, le=1.0)
+    current_iteration: int = Field(ge=0)
+    status: AgentRunStatus = "idle"
+    stop_reason: str | None = None
+    iterations: list[LoopIteration] = Field(default_factory=list)
+    reasoning_log: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class AgentRunRequest(BaseModel):
+    """Request to launch the self-improvement agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: str
+    checkpoint: str
+    target_kpi: float = Field(default=0.75, ge=0.0, le=1.0)
+    max_iterations: int = Field(default=3, ge=1, le=10)
+    diminishing_returns_threshold: float = Field(default=0.02, ge=0.0, le=1.0)
+    simulate: bool = True

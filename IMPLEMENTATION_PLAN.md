@@ -112,38 +112,51 @@ demo/src/
 
 ---
 
-## Milestone 3 — Self-Improving Agent
+## Milestone 3 — Self-Improving Agent ✅ Complete
 
 **Goal:** Nvex runs the full failure-to-fix loop autonomously, without human intervention at each step. See [`SELF_IMPROVEMENT_AGENT.md`](SELF_IMPROVEMENT_AGENT.md) for full design.
 
 ### 3A — Autonomous Loop Orchestrator
-- [ ] Implement `SelfImprovementAgent` — LLM-backed orchestrator that:
+- [x] Implement `SelfImprovementAgent` — orchestrator that:
   - Triggers eval on a checkpoint
   - Reads the EvalRun and identifies failure clusters
   - Selects the highest-leverage patch strategy
   - Dispatches to AlphaBrain
   - Evaluates the result
   - Decides whether to iterate again or terminate
-- [ ] Add stopping criteria: target KPI reached, max iterations, diminishing returns threshold
-- [ ] Add structured logging of agent reasoning at each step
+- [x] Add stopping criteria: target KPI reached, max iterations, diminishing returns threshold
+- [x] Add structured logging of agent reasoning at each step
 
 ### 3B — Agent Tool Registry
-- [ ] `run_eval(checkpoint, benchmark)` → EvalRun
-- [ ] `diagnose_failures(eval_run)` → FailureDiagnosis
-- [ ] `generate_patch_plan(diagnosis)` → PatchPlan
-- [ ] `dispatch_training(plan)` → IterationJob
-- [ ] `compare_checkpoints(before, after)` → ImprovementReport
-- [ ] `save_to_memory(asset)` → ReusableAsset
+- [x] `run_eval(checkpoint, benchmark)` → EvalRun
+- [x] `diagnose_failures(eval_run)` → FailureDiagnosis
+- [x] `generate_patch_plan(diagnosis)` → PatchPlan
+- [x] `dispatch_training(plan)` → IterationJob
+- [x] `compare_checkpoints(before, after)` → ImprovementReport
+- [x] `save_to_memory(asset)` → ReusableAsset
 
 ### 3C — Demo Mode for Self-Improving Agent
-- [ ] Add "Auto-Improve" button on Iteration Runner page
-- [ ] Animate the full loop: each step highlights as the agent processes it
-- [ ] Show agent reasoning panel (why it chose CL over SFT, why it targeted occlusion data)
-- [ ] Show multi-iteration view: loop 1 (62→74%), loop 2 (74→81%), convergence
+- [x] Add "Auto-Improve" button on Iteration Runner page
+- [x] Animate the full loop: each step highlights as the agent processes it
+- [x] Show agent reasoning panel (why it chose CL over SFT, why it targeted occlusion data)
+- [x] Show multi-iteration view: loop 1 (62→74%), loop 2 (74→81%), convergence at 85%
 
 ### 3D — LLM Integration
-- [ ] Integrate an LLM for natural-language failure explanation and patch plan narration
-- [ ] Optionally: expose a chat interface ("Why did ckpt_v0.7 fail at occlusion tasks?")
+- [x] `LLMNarrator` — uses OpenAI (gpt-4o-mini) when `OPENAI_API_KEY` is set, falls back to deterministic templates
+- [x] Natural-language narration for diagnosis, plan, verify, and stop-check steps
+
+### Infrastructure for Milestone 3
+- [x] `nvex_server/agent.py` — `SelfImprovementAgent` with demo (precomputed replay) and real modes
+- [x] `nvex_server/llm_narrator.py` — LLM narration with OpenAI + template fallback
+- [x] New schemas: `FailureDiagnosis`, `AgentStep`, `LoopIteration`, `AgentRunState`, `AgentRunRequest`
+- [x] `POST /api/agent/run` — launch autonomous loop
+- [x] `GET /api/agent/{id}/status` — poll agent state
+- [x] `POST /api/agent/{id}/advance` — advance one step (demo mode animation)
+- [x] `GET /api/demo/agent` — pre-seeded demo agent run
+- [x] `demo/src/components/AgentReasoningPanel.jsx` — step-by-step reasoning UI
+- [x] `demo/src/components/MultiIterationChart.jsx` — pure-SVG multi-loop chart
+- [x] Updated `IterationRunner.jsx` — Auto-Improve toggle, loop progress bar, reasoning panel
+- [x] Updated `ImprovementReport.jsx` — multi-loop comparison chart, stop-reason callout
 
 ---
 

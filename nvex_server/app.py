@@ -8,10 +8,14 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from .agent import SelfImprovementAgent
 from .dispatcher import JobDispatcher
 from .exporters import EvalArtifactExporter
+from .llm_narrator import LLMNarrator
 from .patch_plan_generator import PatchPlanGenerator
 from .schemas import (
+    AgentRunRequest,
+    AgentRunState,
     DemoStateResponse,
     EvalImportRequest,
     EvalRun,
@@ -38,9 +42,11 @@ class InMemoryStore:
     iteration_jobs: dict[str, IterationJob] = field(default_factory=dict)
     reports: dict[str, ImprovementReport] = field(default_factory=dict)
     assets: dict[str, ReusableAsset] = field(default_factory=dict)
+    agent_runs: dict[str, AgentRunState] = field(default_factory=dict)
     demo_eval_run_id: str | None = None
     demo_patch_plan_id: str | None = None
     demo_iteration_id: str | None = None
+    demo_agent_run_id: str | None = None
 
 
 def create_app() -> FastAPI:
@@ -56,6 +62,8 @@ def create_app() -> FastAPI:
     exporter = EvalArtifactExporter()
     patch_plan_generator = PatchPlanGenerator()
     dispatcher = JobDispatcher(repo_root=repo_root, jobs_root=repo_root / "results" / "nvex_jobs")
+    narrator = LLMNarrator()
+    agent = SelfImprovementAgent(store, dispatcher, exporter, patch_plan_generator, narrator)
 
     def build_report(
         iteration_id: str,
@@ -232,6 +240,19 @@ def create_app() -> FastAPI:
         store.demo_patch_plan_id = patch_plan.plan_id
         store.demo_iteration_id = iteration.iteration_id
 
+        # Seed a demo agent run (Mode A — precomputed 3-loop replay)
+        demo_agent_run = agent.start(
+            AgentRunRequest(
+                project_id="proj_libero_kitchen",
+                checkpoint="ckpt_v0.7",
+                target_kpi=0.75,
+                max_iterations=3,
+                diminishing_returns_threshold=0.05,
+                simulate=True,
+            )
+        )
+        store.demo_agent_run_id = demo_agent_run.agent_run_id
+
     seed_demo_state()
 
     @app.get("/health")
@@ -285,6 +306,41 @@ def create_app() -> FastAPI:
             report=report,
             platform_memory=platform_memory(),
         )
+
+    # ------------------------------------------------------------------
+    # Milestone 3 — Self-Improving Agent endpoints
+    # ------------------------------------------------------------------
+
+    @app.post("/api/agent/run", response_model=AgentRunState)
+    def start_agent_run(request: AgentRunRequest) -> AgentRunState:
+        """Launch a new autonomous improvement run."""
+        return agent.start(request)
+
+    @app.get("/api/agent/{agent_run_id}/status", response_model=AgentRunState)
+    def get_agent_status(agent_run_id: str) -> AgentRunState:
+        """Poll the current state of an agent run."""
+        try:
+            return agent.get(agent_run_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="AgentRun not found")
+
+    @app.post("/api/agent/{agent_run_id}/advance", response_model=AgentRunState)
+    def advance_agent_step(agent_run_id: str) -> AgentRunState:
+        """
+        Advance the agent by one step (demo/simulate mode).
+        The React UI calls this to animate each reasoning step.
+        """
+        try:
+            return agent.advance_step(agent_run_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="AgentRun not found")
+
+    @app.get("/api/demo/agent", response_model=AgentRunState)
+    def get_demo_agent() -> AgentRunState:
+        """Return the pre-seeded demo agent run state."""
+        if not store.demo_agent_run_id:
+            raise HTTPException(status_code=500, detail="Demo agent run not initialized")
+        return agent.get(store.demo_agent_run_id)
 
     return app
 
