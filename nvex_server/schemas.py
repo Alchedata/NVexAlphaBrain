@@ -9,6 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 AgentStepType = Literal["eval", "diagnose", "plan", "dispatch", "verify", "memory", "stop_check"]
 AgentStepStatus = Literal["pending", "running", "completed", "failed", "skipped"]
 AgentRunStatus = Literal["idle", "running", "completed", "stopped"]
+AgentEventType = Literal[
+    "run_started",
+    "iteration_started",
+    "step_started",
+    "step_completed",
+    "iteration_completed",
+    "rollback",
+    "run_completed",
+    "run_stopped",
+]
 
 
 def utc_now() -> datetime:
@@ -295,8 +305,26 @@ class AgentStep(BaseModel):
     message: str = ""
     inputs: dict[str, Any] = Field(default_factory=dict)
     outputs: dict[str, Any] = Field(default_factory=dict)
+    expected_duration_ms: int | None = Field(default=None, ge=0)
     started_at: datetime | None = None
     completed_at: datetime | None = None
+
+
+class AgentEvent(BaseModel):
+    """Streaming timeline event emitted as the agent progresses."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: str
+    event_type: AgentEventType
+    iteration_index: int | None = None
+    step_id: str | None = None
+    step_type: AgentStepType | None = None
+    label: str
+    message: str = ""
+    duration_ms: int | None = Field(default=None, ge=0)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    occurred_at: datetime = Field(default_factory=utc_now)
 
 
 class LoopIteration(BaseModel):
@@ -309,6 +337,9 @@ class LoopIteration(BaseModel):
     patch_cluster: str
     eval_before: float = Field(ge=0.0, le=1.0)
     eval_after: float | None = None
+    delta: float | None = None
+    rolled_back: bool = False
+    rollback_reason: str | None = None
     steps: list[AgentStep] = Field(default_factory=list)
     status: Literal["pending", "running", "completed", "failed"] = "pending"
 
@@ -327,6 +358,7 @@ class AgentRunState(BaseModel):
     status: AgentRunStatus = "idle"
     stop_reason: str | None = None
     iterations: list[LoopIteration] = Field(default_factory=list)
+    events: list[AgentEvent] = Field(default_factory=list)
     reasoning_log: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)

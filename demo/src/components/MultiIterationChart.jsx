@@ -93,8 +93,13 @@ export default function MultiIterationChart({ iterations = [], targetKpi = 0.75 
             const y   = barY(pt.value);
             const h   = barH(pt.value);
             const pct = Math.round(pt.value * 100);
+            const loopData = pt.type === 'after'
+              ? iterations.find((loop) => loop.iteration_index === Number(pt.label.replace('Loop ', '')))
+              : null;
             const fill = pt.type === 'before'
               ? 'rgba(99,102,241,0.4)'
+              : loopData?.delta != null && loopData.delta < 0
+                ? 'rgba(244,63,94,0.7)'
               : pt.value >= targetKpi
                 ? 'rgba(16,185,129,0.7)'
                 : 'rgba(99,102,241,0.65)';
@@ -121,6 +126,14 @@ export default function MultiIterationChart({ iterations = [], targetKpi = 0.75 
                 >
                   {pt.label}
                 </text>
+                {loopData?.rolled_back && (
+                  <text
+                    x={x + BAR_W / 2} y={CHART_H + 26}
+                    textAnchor="middle" fill="var(--red)" fontSize={8}
+                  >
+                    rollback
+                  </text>
+                )}
               </g>
             );
           })}

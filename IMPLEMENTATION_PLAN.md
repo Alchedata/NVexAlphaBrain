@@ -164,14 +164,62 @@ demo/src/
 
 **Goal:** Extend from a single demo scenario to a multi-project, multi-user platform.
 
-- [ ] Multi-project support with project isolation
-- [ ] Real data workbench: annotation task creation from patch plan spec
-- [ ] Support additional benchmarks (RoboCasa, RoboCasa365, custom)
-- [ ] Customer onboarding: bring your own checkpoint + eval results
-- [ ] Role-based access: operator view vs. executive view
-- [ ] Persistent Platform Memory across customer projects
-- [ ] API for external integrations (custom eval pipelines, cloud training)
-- [ ] SOC 2 / security review
+### P0 Tickets (Investor-Critical, Build Now)
+
+- [ ] **M4-P0-01: Streaming Agent Timeline + Variable Step Durations**
+  - Scope: backend emits ordered agent events; frontend shows live timeline and auto-play controls.
+  - Acceptance criteria: run shows `run_started`/`step_started`/`step_completed`/`run_stopped` events in sequence; demo can play without manual clicking.
+  - Status: **In Progress**
+
+- [ ] **M4-P0-02: Multi-Iteration Arc with Non-Monotonic Reality**
+  - Scope: demo arc includes at least one regression before recovery; chart and report show per-loop deltas.
+  - Acceptance criteria: one loop has negative delta and is visibly rendered as regression.
+  - Status: **In Progress**
+
+- [ ] **M4-P0-03: Rollback Event + Recovery Loop**
+  - Scope: stopping logic can emit rollback event, mark loop as rolled back, and continue from prior checkpoint baseline.
+  - Acceptance criteria: timeline contains a rollback event and follow-up loop resumes from rollback baseline.
+  - Status: **In Progress**
+
+- [ ] **M4-P0-04: Multi-Project Isolation in Backend Store**
+  - Scope: split global in-memory maps into project-scoped collections and enforce project_id on agent/eval/plan/iteration routes.
+  - Acceptance criteria: project A data never appears in project B responses.
+
+- [ ] **M4-P0-05: Persistent Platform Memory (File/DB-backed)**
+  - Scope: replace volatile `InMemoryStore` memory assets with persistent repository (SQLite or file-backed JSON).
+  - Acceptance criteria: server restart preserves recipes, templates, and failure patterns.
+
+### P1 Tickets (Customer Readiness)
+
+- [ ] **M4-P1-01: Customer Onboarding API (BYO Checkpoint + Eval Artifact)**
+  - Scope: guided endpoints for registering a project, uploading checkpoint metadata, and importing benchmark artifacts.
+  - Acceptance criteria: new customer project can be created and run through eval -> plan without code edits.
+
+- [ ] **M4-P1-02: Benchmark Connector Expansion (RoboCasa/Tabletop/Custom)**
+  - Scope: unify exporter adapters and normalize imported metrics across suites.
+  - Acceptance criteria: at least 3 suites render correctly in Failure Map and Improvement Report.
+
+- [ ] **M4-P1-03: Role-Based Views (Operator vs Executive)**
+  - Scope: frontend route guards and dashboard tailoring by role.
+  - Acceptance criteria: operator sees full execution logs; executive sees KPI/ROI view with guardrail summaries.
+
+- [ ] **M4-P1-04: Governance + Audit Trail**
+  - Scope: store full run decisions, tool inputs/outputs, rollback triggers, and approval checkpoints.
+  - Acceptance criteria: each run has an exportable audit log bundle.
+
+### P2 Tickets (Scale + Enterprise)
+
+- [ ] **M4-P2-01: External Integration API**
+  - Scope: webhooks/REST endpoints for external eval pipelines and training infra.
+  - Acceptance criteria: external system can push eval results and receive patch plans.
+
+- [ ] **M4-P2-02: Cost/ROI Observatory**
+  - Scope: per-iteration compute/time/cost tracking with ROI rollups.
+  - Acceptance criteria: report displays uplift per dollar and estimated monthly run cost.
+
+- [ ] **M4-P2-03: Security Hardening + SOC2 Readiness Track**
+  - Scope: authn/authz baseline, secrets handling, logging controls, dependency audit checklist.
+  - Acceptance criteria: security checklist documented and first-pass audit completed.
 
 ---
 
@@ -179,10 +227,10 @@ demo/src/
 
 | Priority | Task | Milestone | Effort |
 |----------|------|-----------|--------|
-| 🔴 High | SelfImprovementAgent skeleton | M3A | ~3 days |
-| 🔴 High | Agent tool registry (`run_eval`, `generate_patch_plan`, `dispatch_training`) | M3B | ~2 days |
-| 🟡 Med | "Auto-Improve" demo animation + reasoning panel | M3C | ~2 days |
-| 🟡 Med | LLM narration for failure explanation and patch plans | M3D | ~2 days |
-| 🟡 Med | Multi-iteration convergence view | M3C | ~1 day |
-| 🟢 Low | Customer onboarding flow for uploaded checkpoints/eval results | M4 | ~3 days |
-| 🟢 Low | Multi-project platform memory persistence | M4 | ~2 days |
+| 🔴 High | M4-P0-01 Streaming timeline + auto-play controls | M4 | ~1.5 days |
+| 🔴 High | M4-P0-02 Multi-iteration non-monotonic arc (regression) | M4 | ~1 day |
+| 🔴 High | M4-P0-03 Rollback event + recovery loop | M4 | ~1 day |
+| 🔴 High | M4-P0-04 Multi-project isolation layer | M4 | ~2 days |
+| 🟡 Med | M4-P0-05 Persistent platform memory backend | M4 | ~2 days |
+| 🟡 Med | M4-P1-01 Customer onboarding flow (BYO artifacts/checkpoint) | M4 | ~2 days |
+| 🟢 Low | M4-P1-03 Role-based operator/executive views | M4 | ~2 days |

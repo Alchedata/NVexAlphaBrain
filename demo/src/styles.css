@@ -558,6 +558,7 @@ svg { display: block; }
   transition: background 0.15s;
 }
 .btn-secondary:hover { background: var(--surf-hover); color: var(--t1); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Loop progress card */
 .agent-progress-card { display: flex; flex-direction: column; gap: 12px; }
@@ -593,11 +594,54 @@ svg { display: block; }
 /* Agent reasoning panel */
 .agent-panel { display: flex; flex-direction: column; gap: 12px; }
 .agent-panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.agent-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.agent-events {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surf-hi);
+  padding: 10px;
+}
+.agent-event-list { display: flex; flex-direction: column; gap: 6px; }
+.agent-event-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: flex-start;
+  border-radius: 8px;
+  background: var(--surf);
+  border: 1px solid transparent;
+  padding: 7px 8px;
+}
+.agent-event-row.rollback {
+  border-color: rgba(244,63,94,0.32);
+  background: rgba(244,63,94,0.07);
+}
+.agent-event-icon { color: var(--a3); font-size: 12px; line-height: 1.4; margin-top: 1px; }
+.agent-event-label { font-size: 12px; font-weight: 600; color: var(--t1); }
+.agent-event-msg { font-size: 11px; color: var(--t2); margin-top: 1px; }
+.agent-event-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: 10px;
+  color: var(--t3);
+  white-space: nowrap;
+}
 
 .agent-loop-block { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; }
 .agent-loop-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .agent-loop-meta { font-size: 12px; color: var(--t2); }
 .agent-loop-uplift { color: var(--t2); }
+.agent-rollback-note {
+  font-size: 11px;
+  color: var(--red);
+  background: rgba(244,63,94,0.08);
+  border: 1px solid rgba(244,63,94,0.22);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
 
 .loop-badge {
   font-size: 11px; font-weight: 600; padding: 2px 8px;

@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from .schemas import (
+    AgentEvent,
     AgentRunRequest,
     AgentRunState,
     AgentStep,
@@ -61,17 +62,17 @@ _DEMO_LOOPS: list[dict[str, Any]] = [
         "eval_before": 0.62,
         "eval_after": 0.74,
         "steps": [
-            ("eval",       "Run eval",         "Triggered evaluation of ckpt_v0.7 on LIBERO Kitchen benchmark."),
+            ("eval",       "Run eval",          "Triggered evaluation of ckpt_v0.7 on LIBERO Kitchen benchmark.", 2300),
             ("diagnose",   "Diagnose failures", "Identified dominant failure cluster: Occlusion / object visibility (38% of failures). "
-                                                "Root causes: camera angle variation, object-behind-object cases."),
+                                                 "Root causes: camera angle variation, object-behind-object cases.", 1800),
             ("plan",       "Generate plan",     "Selected continual_learning strategy via alphabrain_cl. "
-                                                "Found matching recipe in Platform Memory: occlusion_recovery_v1 (used 3×, avg +9% uplift). Applying."),
+                                                 "Found matching recipe in Platform Memory: occlusion_recovery_v1 (used 3x, avg +9% uplift). Applying.", 1600),
             ("dispatch",   "Dispatch training", "Training job dispatched to AlphaBrain CL. "
-                                                "Config: 200 patch episodes, 70% real / 30% synthetic. Estimated time: 45 min."),
-            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 62% → 74%. Uplift: +12pp."),
+                                                 "Config: 200 patch episodes, 70% real / 30% synthetic. Estimated time: 45 min.", 2600),
+            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 62% to 74%. Uplift: +12pp.", 2100),
             ("memory",     "Save to memory",    "Saved recipe occlusion_cl_patch_v1 to Platform Memory. "
-                                                "Recipe confidence: high. Pattern fingerprint stored for future reuse."),
-            ("stop_check", "Check stopping",    "Target KPI 75% not yet reached (74%). Improvement delta +12pp exceeds threshold. Continuing."),
+                                                 "Recipe confidence: high. Pattern fingerprint stored for future reuse.", 1300),
+            ("stop_check", "Check stopping",    "Target KPI 75% not yet reached (74%). Improvement delta +12pp exceeds threshold. Continuing.", 900),
         ],
     },
     {
@@ -80,18 +81,35 @@ _DEMO_LOOPS: list[dict[str, Any]] = [
         "eval_before": 0.74,
         "eval_after": 0.81,
         "steps": [
-            ("eval",       "Run eval",         "Triggered evaluation of ckpt_v1.0 (post-occlusion patch) on LIBERO Kitchen benchmark."),
+            ("eval",       "Run eval",          "Triggered evaluation of ckpt_v1.0 (post-occlusion patch) on LIBERO Kitchen benchmark.", 2200),
             ("diagnose",   "Diagnose failures", "Primary cluster shifted to Recovery / error correction (31% of failures). "
-                                                "Root cause: robot unable to self-correct after near-miss grasp failures."),
+                                                 "Root cause: robot unable to self-correct after near-miss grasp failures.", 1700),
             ("plan",       "Generate plan",     "Selected fine_tune strategy on teleop correction trajectories via alphabrain_finetune. "
-                                                "No prior recipe found — agent will experiment and record outcome."),
+                                                 "No prior recipe found; agent will experiment and record outcome.", 1500),
             ("dispatch",   "Dispatch training", "Fine-tune job dispatched. "
-                                                "Config: 150 teleop correction clips, 80% real / 20% synthetic. Estimated time: 30 min."),
-            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 74% → 81%. Uplift: +7pp."),
+                                                 "Config: 150 teleop correction clips, 80% real / 20% synthetic. Estimated time: 30 min.", 2400),
+            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 74% to 81%. Uplift: +7pp.", 2100),
             ("memory",     "Save to memory",    "New recipe recovery_finetune_v1 saved. "
-                                                "Confidence: medium (first use). Will be promoted on next successful application."),
+                                                 "Confidence: medium (first use). Will be promoted on next successful application.", 1200),
             ("stop_check", "Check stopping",    "Target KPI 75% reached and exceeded (81%). "
-                                                "Continuing one more loop to characterize diminishing-returns boundary."),
+                                                 "Continue one more loop to probe robustness under distribution shift.", 900),
+        ],
+    },
+    {
+        "patch_cluster": "Dexterity drift / gripper instability",
+        "patch_strategy": "fine_tune",
+        "eval_before": 0.81,
+        "eval_after": 0.79,
+        "steps": [
+            ("eval",       "Run eval",          "Triggered evaluation of ckpt_v1.1 (post-recovery patch) under harder randomized seeds.", 2500),
+            ("diagnose",   "Diagnose failures", "Failure profile shifted to dexterity drift during re-grasp. "
+                                                 "The cluster appears underrepresented in current patch data.", 1800),
+            ("plan",       "Generate plan",     "Tried an aggressive fine_tune sweep to recover edge cases quickly.", 1400),
+            ("dispatch",   "Dispatch training", "Fine-tune sweep executed with high learning-rate variant. Estimated time: 18 min.", 2100),
+            ("verify",     "Verify results",    "Regression detected. Success rate fell from 81% to 79% (-2pp).", 2000),
+            ("memory",     "Save to memory",    "Stored failed recipe signature as anti-pattern: aggressive_finetune_drift_v1.", 1100),
+            ("stop_check", "Check stopping",    "Rollback triggered. Regression exceeds tolerance (2pp > 1pp). "
+                                                 "Revert to ckpt_v1.1 and launch safer corrective loop.", 950),
         ],
     },
     {
@@ -100,16 +118,14 @@ _DEMO_LOOPS: list[dict[str, Any]] = [
         "eval_before": 0.81,
         "eval_after": 0.85,
         "steps": [
-            ("eval",       "Run eval",         "Triggered evaluation of ckpt_v1.1 (post-recovery patch) on LIBERO Kitchen benchmark."),
-            ("diagnose",   "Diagnose failures", "Remaining failures clustered around Lighting / appearance shift (18% of failures). "
-                                                "Lower severity; root cause is lighting variance not seen in training distribution."),
-            ("plan",       "Generate plan",     "Selected continual_learning with lighting-augmented episodes via alphabrain_cl. "
-                                                "Expected uplift is smaller — this is a diminishing-returns zone."),
-            ("dispatch",   "Dispatch training", "CL job dispatched with 80 lighting-augmented patch episodes. Estimated time: 20 min."),
-            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 81% → 85%. Uplift: +4pp."),
-            ("memory",     "Save to memory",    "Recipe lighting_cl_patch_v1 saved. Platform Memory now has 3 new recipes from this project."),
+            ("eval",       "Run eval",          "Evaluated rolled-back checkpoint ckpt_v1.1 as new baseline after rollback.", 1900),
+            ("diagnose",   "Diagnose failures", "Residual failures cluster around lighting and appearance shift (18% of failures).", 1600),
+            ("plan",       "Generate plan",     "Selected safer continual_learning patch with lighting augmentation and lower update magnitude.", 1500),
+            ("dispatch",   "Dispatch training", "CL job dispatched with 80 lighting-augmented patch episodes. Estimated time: 20 min.", 2100),
+            ("verify",     "Verify results",    "Re-evaluation complete. Success rate improved from 81% to 85%. Uplift: +4pp.", 2100),
+            ("memory",     "Save to memory",    "Saved rollback-aware recipe lighting_cl_patch_v2. Confidence: high after stable recovery.", 1200),
             ("stop_check", "Check stopping",    "Improvement delta +4pp is below the 5pp diminishing-returns threshold. "
-                                                "Target KPI already exceeded. Agent terminates — convergence reached at 85%."),
+                                                 "Target KPI already exceeded. Agent terminates; convergence reached at 85%.", 900),
         ],
     },
 ]
@@ -122,7 +138,7 @@ def _build_demo_run(request: AgentRunRequest) -> AgentRunState:
 
     for idx, loop_def in enumerate(_DEMO_LOOPS[: request.max_iterations], start=1):
         steps: list[AgentStep] = []
-        for step_type, label, message in loop_def["steps"]:
+        for step_type, label, message, expected_duration_ms in loop_def["steps"]:
             steps.append(
                 AgentStep(
                     step_id=_sid(),
@@ -130,15 +146,19 @@ def _build_demo_run(request: AgentRunRequest) -> AgentRunState:
                     status="pending",
                     label=label,
                     message=message,
+                    expected_duration_ms=expected_duration_ms,
                 )
             )
+        eval_after = loop_def["eval_after"]
+        eval_before = loop_def["eval_before"]
         iterations.append(
             LoopIteration(
                 iteration_index=idx,
                 patch_strategy=loop_def["patch_strategy"],
                 patch_cluster=loop_def["patch_cluster"],
-                eval_before=loop_def["eval_before"],
-                eval_after=loop_def["eval_after"],
+                eval_before=eval_before,
+                eval_after=eval_after,
+                delta=(round(eval_after - eval_before, 3) if eval_after is not None else None),
                 steps=steps,
                 status="pending",
             )
@@ -151,7 +171,7 @@ def _build_demo_run(request: AgentRunRequest) -> AgentRunState:
         iterations[0].steps[0].status = "running"
         iterations[0].steps[0].started_at = _utc()
 
-    return AgentRunState(
+    state = AgentRunState(
         agent_run_id=run_id,
         project_id=request.project_id,
         target_kpi=request.target_kpi,
@@ -166,6 +186,34 @@ def _build_demo_run(request: AgentRunRequest) -> AgentRunState:
             "Loading checkpoint ckpt_v0.7 from Platform Memory.",
         ],
     )
+    SelfImprovementAgent._emit_event(
+        state,
+        "run_started",
+        label="Agent run started",
+        message=f"Autonomous run launched with target KPI {int(request.target_kpi * 100)}%.",
+    )
+    if iterations:
+        first_loop = iterations[0]
+        SelfImprovementAgent._emit_event(
+            state,
+            "iteration_started",
+            iteration_index=first_loop.iteration_index,
+            label=f"Loop {first_loop.iteration_index} started",
+            message=f"Focus cluster: {first_loop.patch_cluster}.",
+        )
+        if first_loop.steps:
+            first_step = first_loop.steps[0]
+            SelfImprovementAgent._emit_event(
+                state,
+                "step_started",
+                iteration_index=first_loop.iteration_index,
+                step_id=first_step.step_id,
+                step_type=first_step.step_type,
+                label=first_step.label,
+                message=first_step.message,
+            )
+
+    return state
 
 
 class SelfImprovementAgent:
@@ -248,6 +296,33 @@ class SelfImprovementAgent:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _emit_event(
+        state: AgentRunState,
+        event_type: str,
+        *,
+        label: str,
+        message: str = "",
+        iteration_index: int | None = None,
+        step_id: str | None = None,
+        step_type: str | None = None,
+        duration_ms: int | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        state.events.append(
+            AgentEvent(
+                event_id=_sid(),
+                event_type=event_type,
+                iteration_index=iteration_index,
+                step_id=step_id,
+                step_type=step_type,
+                label=label,
+                message=message,
+                duration_ms=duration_ms,
+                metadata=metadata or {},
+            )
+        )
+
+    @staticmethod
     def _advance_demo(state: AgentRunState) -> AgentRunState:
         """Mutate-and-return: mark running→completed, activate next step."""
         now = _utc()
@@ -266,10 +341,21 @@ class SelfImprovementAgent:
 
                 step.status = "completed"
                 step.completed_at = now
+                duration_ms = step.expected_duration_ms
 
                 # Narrate completion to reasoning log
                 state.reasoning_log.append(
                     f"[Loop {loop.iteration_index}] {step.label}: {step.message}"
+                )
+                SelfImprovementAgent._emit_event(
+                    state,
+                    "step_completed",
+                    iteration_index=loop.iteration_index,
+                    step_id=step.step_id,
+                    step_type=step.step_type,
+                    label=step.label,
+                    message=step.message,
+                    duration_ms=duration_ms,
                 )
 
                 # Activate the next step in this loop if it exists
@@ -277,23 +363,72 @@ class SelfImprovementAgent:
                     nxt = loop.steps[i + 1]
                     nxt.status = "running"
                     nxt.started_at = now
+                    SelfImprovementAgent._emit_event(
+                        state,
+                        "step_started",
+                        iteration_index=loop.iteration_index,
+                        step_id=nxt.step_id,
+                        step_type=nxt.step_type,
+                        label=nxt.label,
+                        message=nxt.message,
+                    )
                     return state
 
                 # No more steps — this loop is done
                 loop.status = "completed"
                 if loop.eval_after is not None:
+                    delta = loop.eval_after - loop.eval_before
+                    loop.delta = round(delta, 3)
                     loop_text = (
                         f"[Loop {loop.iteration_index}] Completed. "
-                        f"{int(loop.eval_before * 100)}% → {int(loop.eval_after * 100)}%. "
+                        f"{int(loop.eval_before * 100)}% -> {int(loop.eval_after * 100)}%. "
+                    )
+                    SelfImprovementAgent._emit_event(
+                        state,
+                        "iteration_completed",
+                        iteration_index=loop.iteration_index,
+                        label=f"Loop {loop.iteration_index} completed",
+                        message=f"Success {int(loop.eval_before * 100)}% -> {int(loop.eval_after * 100)}% (delta {int(delta * 100):+d}pp).",
+                        metadata={
+                            "eval_before": loop.eval_before,
+                            "eval_after": loop.eval_after,
+                            "delta": loop.delta,
+                        },
                     )
                     # Check stopping for the last (stop_check) step
                     last_step = loop.steps[-1]
                     if last_step.step_type == "stop_check":
+                        lower_message = last_step.message.lower()
+                        if "rollback" in lower_message or "revert" in lower_message:
+                            loop.rolled_back = True
+                            loop.rollback_reason = last_step.message
+                            SelfImprovementAgent._emit_event(
+                                state,
+                                "rollback",
+                                iteration_index=loop.iteration_index,
+                                label=f"Rollback after loop {loop.iteration_index}",
+                                message=last_step.message,
+                                metadata={
+                                    "rollback_from": loop.eval_after,
+                                    "rollback_to": loop.eval_before,
+                                },
+                            )
+                            state.reasoning_log.append(
+                                f"[Loop {loop.iteration_index}] Rollback executed to prior checkpoint "
+                                f"after regression ({int(loop.eval_before * 100)}% -> {int(loop.eval_after * 100)}%)."
+                            )
                         # Detect whether the stop message announces convergence
-                        if "terminates" in last_step.message or "converge" in last_step.message:
+                        if "terminates" in lower_message or "converge" in lower_message:
                             state.status = "stopped"
                             state.stop_reason = last_step.message
                             state.reasoning_log.append(loop_text + "Agent stopped: diminishing returns / convergence.")
+                            SelfImprovementAgent._emit_event(
+                                state,
+                                "run_stopped",
+                                iteration_index=loop.iteration_index,
+                                label="Agent stopped",
+                                message=last_step.message,
+                            )
                             return state
                     state.reasoning_log.append(loop_text)
 
@@ -303,15 +438,38 @@ class SelfImprovementAgent:
                 if next_loop_idx < len(state.iterations):
                     next_loop = state.iterations[next_loop_idx]
                     next_loop.status = "running"
+                    SelfImprovementAgent._emit_event(
+                        state,
+                        "iteration_started",
+                        iteration_index=next_loop.iteration_index,
+                        label=f"Loop {next_loop.iteration_index} started",
+                        message=f"Focus cluster: {next_loop.patch_cluster}.",
+                    )
                     if next_loop.steps:
                         next_loop.steps[0].status = "running"
                         next_loop.steps[0].started_at = now
+                        first_step = next_loop.steps[0]
+                        SelfImprovementAgent._emit_event(
+                            state,
+                            "step_started",
+                            iteration_index=next_loop.iteration_index,
+                            step_id=first_step.step_id,
+                            step_type=first_step.step_type,
+                            label=first_step.label,
+                            message=first_step.message,
+                        )
                     return state
 
                 # All loops exhausted — mark completed
                 state.status = "completed"
                 state.stop_reason = "All planned iterations completed."
                 state.reasoning_log.append("Agent run completed successfully.")
+                SelfImprovementAgent._emit_event(
+                    state,
+                    "run_completed",
+                    label="Agent completed",
+                    message=state.stop_reason,
+                )
                 return state
 
         return state

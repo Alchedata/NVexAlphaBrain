@@ -50,7 +50,15 @@ export default function ImprovementReport() {
               <div key={loop.iteration_index} className="report-item">
                 Loop {loop.iteration_index}: {loop.patch_cluster} patch →{' '}
                 {Math.round(loop.eval_before * 100)}%{' '}
-                <span style={{ color: 'var(--green)' }}>→ {Math.round(loop.eval_after * 100)}%</span>
+                <span style={{ color: loop.delta != null && loop.delta < 0 ? 'var(--red)' : 'var(--green)' }}>
+                  → {Math.round(loop.eval_after * 100)}%
+                </span>
+                {loop.delta != null && (
+                  <span style={{ color: loop.delta < 0 ? 'var(--red)' : 'var(--green)' }}>
+                    {' '}({loop.delta >= 0 ? '+' : ''}{Math.round(loop.delta * 100)}pp)
+                  </span>
+                )}
+                {loop.rolled_back && <span style={{ color: 'var(--red)' }}> · rollback applied</span>}
               </div>
             ))}
           </div>

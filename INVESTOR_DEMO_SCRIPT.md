@@ -10,9 +10,9 @@ By the end of the demo, investors should understand:
 
 - **Problem:** Physical AI teams can train policies, but improving failed checkpoints is still slow, manual, and ad hoc.
 - **Product:** Nvex is the orchestration and intelligence layer for policy improvement.
-- **Proof:** The demo turns a failing LIBERO Kitchen checkpoint from **62% success** to **74% success** through a structured failure-to-fix loop.
+- **Proof:** The demo runs a realistic autonomous loop from **62% -> 74% -> 81% -> 79% (regression) -> rollback -> 85%** with a streamed timeline and stop condition.
 - **Moat:** Every loop creates reusable platform memory: recipes, failure patterns, verification plans, and execution templates.
-- **Roadmap:** The current demo proves the workflow; the next step is the autonomous self-improvement agent.
+- **Roadmap:** Milestone 4 extends this into multi-project isolation, persistence, and customer onboarding.
 
 ## Pre-Demo Setup
 
@@ -60,12 +60,12 @@ Before the call:
 | Project Overview | 1 min | Establish the failing checkpoint |
 | Failure Map | 2 min | Show diagnosis, not dashboards |
 | Patch Plan | 2 min | Show Nvex deciding the next action |
-| Iteration Runner | 2 min | Show orchestration into execution |
+| Iteration Runner | 3 min | Show streamed autonomous execution + rollback discipline |
 | Improvement Report | 2 min | Show verified uplift |
 | Platform Memory | 2 min | Show compounding platform value |
 | Close | 1 min | Tie to roadmap and investment thesis |
 
-Total: 14 minutes.
+Total: 15 minutes.
 
 ## Opening Talk Track
 
@@ -80,6 +80,10 @@ Then:
 Optional one-liner:
 
 > Think of Nvex as the self-improvement layer for Physical AI policies.
+
+Optional follow-up one-liner:
+
+> The key credibility point is not just improvement. It is safe improvement with rollback when a loop regresses.
 
 ## Page-By-Page Script
 
@@ -177,22 +181,26 @@ Transition:
 
 What to show:
 
-- Job stages.
-- Live or simulated progress.
-- Logs/artifacts.
-- Backend-driven execution path if asked.
+- Streaming timeline events (`run_started`, `step_started`, `step_completed`, `rollback`, `run_stopped`).
+- Auto-stream controls (start/pause) and variable step durations.
+- Four-loop arc with one intentional regression and rollback.
+- Logs/artifacts and backend-driven execution path if asked.
 
 Say:
 
-> The iteration runner turns the patch plan into an execution job. In the current system, Nvex dispatches through a backend interface into the execution layer, tracks stages, and collects artifacts back into the product.
+> The iteration runner is the operating heart of Nvex. It streams each reasoning and execution event in order, so you can see what the agent is doing and why, not just a final score.
+
+Then:
+
+> Notice this run is realistic, not perfectly monotonic. The third loop regresses from 81% to 79%. Nvex triggers rollback automatically, reverts to the prior checkpoint baseline, and launches a safer corrective loop.
 
 Be precise:
 
-> For investor demos, this run is seeded and replayable so the demo is stable. The backend path, schemas, dispatch interface, polling, and report generation are implemented. For customer POCs, this is where we connect their checkpoint and run the actual improvement job asynchronously.
+> For investor demos, this run is seeded and replayable so timing is stable. The event model, schemas, dispatch interface, polling, rollback signaling, and report generation are implemented. For customer POCs, this is where we connect their checkpoint and run the same loop asynchronously.
 
 Investor point:
 
-> Nvex is designed to sit above execution frameworks. It owns the intelligence loop; execution backends can vary.
+> Nvex is designed to sit above execution frameworks. It owns decisioning, governance, and loop control. Execution backends can vary.
 
 Transition:
 
@@ -202,19 +210,19 @@ Transition:
 
 What to show:
 
-- Before: `62%`.
-- After: `74%`.
-- Uplift: `+12pp`.
-- Cluster reduction / recovery improvement.
+- Loop-by-loop: `62 -> 74 -> 81 -> 79 (rollback) -> 85`.
+- Final uplift: `+23pp` versus the starting checkpoint.
+- Regression loop rendered in red and marked as rolled back.
+- Cluster reduction / recovery improvement and generated assets.
 - Generated assets.
 
 Say:
 
-> Here is the result. The checkpoint improves from 62% to 74% success, a 12-point gain. Nvex also shows what changed: fewer failure clusters, better recovery behavior, and the artifacts created during the loop.
+> Here is the result. Nvex climbs from 62% to 85%, but importantly it does not hide failure. It surfaces a regression, applies rollback, and recovers safely. That behavior is critical for customer trust.
 
 Then:
 
-> This matters because Physical AI improvement needs to be auditable. You want to know not only that the score improved, but why it improved and whether the fix should be reused.
+> This matters because Physical AI improvement needs to be auditable and controlled. You want to know not only that the score improved, but where it regressed, why rollback was triggered, and which recipe is now safe to reuse.
 
 Investor point:
 
@@ -241,6 +249,10 @@ Then:
 
 > This is the compounding loop. More projects produce more failures. More failures produce more recipes. More recipes make future improvement faster and more reliable.
 
+Add:
+
+> The failed loop is also memory. Nvex stores anti-patterns so teams avoid repeating known bad interventions.
+
 Investor point:
 
 > The moat is not one benchmark result. The moat is the accumulated memory of how to fix Physical AI failures across tasks, environments, embodiments, and customers.
@@ -253,7 +265,7 @@ Say:
 
 Then:
 
-> Today, the demo shows the full loop on a seeded LIBERO Kitchen improvement case: 62% to 74%. The next milestone is the autonomous self-improvement agent: upload a checkpoint, set a target KPI, and let Nvex run diagnosis, planning, execution, verification, and memory updates until the target is reached or it knows to stop.
+> Today, the demo shows the full autonomous loop on a seeded LIBERO Kitchen case: 62% to 85% with a visible regression and rollback. The next milestone extends this into customer-grade multi-project operation: project isolation, persistent memory, and onboarding for bring-your-own checkpoints and eval artifacts.
 
 Final line:
 
@@ -268,7 +280,7 @@ Use this if time is tight.
 3. **Failure Map:** "Failures cluster around occlusion and missing recovery behavior."
 4. **Patch Plan:** "Nvex generates targeted data, training, and verification steps instead of asking the team to guess."
 5. **Runner:** "Nvex dispatches the improvement job and tracks artifacts."
-6. **Report:** "The checkpoint improves from 62% to 74%."
+6. **Report:** "The run reaches 85%, including one regression that Nvex rolls back automatically."
 7. **Memory:** "The fix becomes reusable platform memory, so every loop makes the system smarter."
 8. **Close:** "This is the self-improvement layer for Physical AI."
 
@@ -290,7 +302,7 @@ Answer:
 
 Answer:
 
-> The current Milestone 2 demo has a React product surface and FastAPI backend path. It includes schema contracts, eval artifact import, patch-plan generation, job dispatch, polling, report generation, and seeded before/after LIBERO eval artifacts. The investor demo is replayable for stability; customer POCs would connect real checkpoints and run asynchronously.
+> The current demo includes a React product surface and FastAPI backend path with schema contracts, eval import, patch-plan generation, job dispatch, polling, multi-iteration agent state, streamed timeline events, rollback signaling, and report generation. The investor run is replayable for stability; customer POCs connect real checkpoints and run asynchronously.
 
 ### "Why will this compound?"
 
@@ -314,7 +326,7 @@ Answer:
 
 Answer:
 
-> The agent is the next milestone. It runs eval, diagnoses failures, selects the intervention, dispatches training, verifies the new checkpoint, saves memory, and decides whether to continue. It is targeted incremental improvement, not retraining from scratch.
+> The agent runs eval, diagnoses failures, selects interventions, dispatches training, verifies the checkpoint, saves memory, emits timeline events, and decides whether to continue, rollback, or stop. It is targeted incremental improvement, not retraining from scratch.
 
 ### "Why now?"
 
@@ -329,15 +341,16 @@ Answer:
 - "We are not replacing training frameworks; we are orchestrating them."
 - "The product compounds because each fix becomes memory."
 - "The demo is stable and replayable; the architecture is designed for live customer POCs."
+- "We show real control discipline: if a loop regresses, Nvex rolls back and recovers."
 - "The moat is the growing library of failure patterns and successful interventions."
 
 ## Phrases To Avoid
 
-- Avoid saying the current demo is fully autonomous if you are showing the Milestone 2 flow.
+- Avoid implying this seeded investor flow is a live multi-hour training run.
 - Avoid promising real-time training during an investor meeting.
 - Avoid positioning Nvex as only a benchmark dashboard.
 - Avoid making AlphaBrain the center of the story. Mention it as the bundled execution layer only if asked or during the runner section.
-- Avoid claiming the 62% to 74% case proves general deployment readiness. It proves the loop and product thesis.
+- Avoid claiming the 62% to 85% case proves general deployment readiness. It proves loop quality, control, and product thesis.
 
 ## Backup Plan
 
@@ -360,8 +373,16 @@ If someone asks for implementation detail:
 
 > The backend is FastAPI. The key objects are eval runs, failure diagnoses, patch plans, iteration jobs, improvement reports, and reusable memory assets. The dispatch layer is intentionally separated so Nvex can orchestrate different execution backends.
 
+If they ask about control and safety:
+
+> The agent emits explicit run events and applies rollback when a loop regresses beyond tolerance. That is the foundation for customer-facing governance and audit trails.
+
 ## One-Slide Summary
 
 Use this as the verbal summary if you only get one minute:
 
 > Nvex is the self-improvement layer for Physical AI. It starts with a failing checkpoint, diagnoses the failure modes, generates a targeted patch plan, dispatches the improvement run, verifies the new checkpoint, and saves the recipe to platform memory. In the demo, a LIBERO Kitchen policy improves from 62% to 74%. The long-term thesis is that every failure makes the platform smarter, creating a compounding library of recipes for robot policy improvement.
+
+Replace the metric callout if using the current Milestone 4 demo flow:
+
+> In the current demo, a LIBERO Kitchen policy progresses from 62% to 85%, including a visible regression and automatic rollback before final convergence.

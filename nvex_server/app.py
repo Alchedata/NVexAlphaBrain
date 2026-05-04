@@ -246,7 +246,7 @@ def create_app() -> FastAPI:
                 project_id="proj_libero_kitchen",
                 checkpoint="ckpt_v0.7",
                 target_kpi=0.75,
-                max_iterations=3,
+                max_iterations=4,
                 diminishing_returns_threshold=0.05,
                 simulate=True,
             )

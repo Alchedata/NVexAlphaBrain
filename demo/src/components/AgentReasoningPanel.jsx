@@ -26,6 +26,26 @@ const STATUS_CLASS = {
   skipped:   'idle',
 };
 
+const EVENT_ICONS = {
+  run_started: '▶',
+  iteration_started: '↻',
+  step_started: '•',
+  step_completed: '✓',
+  iteration_completed: '▣',
+  rollback: '⤺',
+  run_completed: '🏁',
+  run_stopped: '🛑',
+};
+
+function formatTime(isoValue) {
+  if (!isoValue) return '--:--:--';
+  try {
+    return new Date(isoValue).toLocaleTimeString();
+  } catch {
+    return '--:--:--';
+  }
+}
+
 function StepRow({ step }) {
   const icon  = STEP_ICONS[step.step_type] || '•';
   const cls   = STATUS_CLASS[step.status] || 'idle';
@@ -45,7 +65,7 @@ function StepRow({ step }) {
   );
 }
 
-export default function AgentReasoningPanel({ agentRun, onAdvance }) {
+export default function AgentReasoningPanel({ agentRun, onAdvance, onStream, onPause, isStreaming = false }) {
   if (!agentRun) {
     return (
       <div className="card">
@@ -55,7 +75,7 @@ export default function AgentReasoningPanel({ agentRun, onAdvance }) {
     );
   }
 
-  const { iterations = [], status, stop_reason, reasoning_log = [], current_iteration } = agentRun;
+  const { iterations = [], status, stop_reason, reasoning_log = [], current_iteration, events = [] } = agentRun;
   const isDone = status === 'completed' || status === 'stopped';
 
   return (
@@ -70,12 +90,45 @@ export default function AgentReasoningPanel({ agentRun, onAdvance }) {
               : `Loop ${current_iteration} of ${iterations.length} — ${status}`}
           </div>
         </div>
-        {!isDone && onAdvance && (
-          <button className="btn-secondary" onClick={onAdvance}>
-            Next Step ›
-          </button>
-        )}
+        <div className="agent-controls">
+          {!isDone && onAdvance && (
+            <button className="btn-secondary" onClick={onAdvance} disabled={isStreaming}>
+              Next Step ›
+            </button>
+          )}
+          {!isDone && onStream && !isStreaming && (
+            <button className="btn-secondary" onClick={onStream}>
+              Start Stream
+            </button>
+          )}
+          {!isDone && onPause && isStreaming && (
+            <button className="btn-secondary" onClick={onPause}>
+              Pause Stream
+            </button>
+          )}
+        </div>
       </div>
+
+      {events.length > 0 && (
+        <div className="agent-events">
+          <div className="section-title" style={{ marginBottom: 6 }}>Streaming Timeline</div>
+          <div className="agent-event-list">
+            {events.slice(-14).map((event) => (
+              <div key={event.event_id} className={`agent-event-row ${event.event_type === 'rollback' ? 'rollback' : ''}`}>
+                <span className="agent-event-icon">{EVENT_ICONS[event.event_type] || '•'}</span>
+                <div className="agent-event-body">
+                  <div className="agent-event-label">{event.label}</div>
+                  {event.message && <div className="agent-event-msg">{event.message}</div>}
+                </div>
+                <div className="agent-event-meta">
+                  {event.duration_ms != null && <span>{(event.duration_ms / 1000).toFixed(1)}s</span>}
+                  <span>{formatTime(event.occurred_at)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Per-loop step lists */}
       {iterations.map((loop) => (
@@ -87,11 +140,22 @@ export default function AgentReasoningPanel({ agentRun, onAdvance }) {
               {loop.eval_after != null && (
                 <span className="agent-loop-uplift">
                   {' '}· {Math.round(loop.eval_before * 100)}%{' '}
-                  <span style={{ color: 'var(--green)' }}>→ {Math.round(loop.eval_after * 100)}%</span>
+                  <span style={{ color: loop.delta != null && loop.delta < 0 ? 'var(--red)' : 'var(--green)' }}>
+                    → {Math.round(loop.eval_after * 100)}%
+                  </span>
+                  {loop.delta != null && (
+                    <span style={{ color: loop.delta < 0 ? 'var(--red)' : 'var(--green)' }}>
+                      {' '}({loop.delta >= 0 ? '+' : ''}{Math.round(loop.delta * 100)}pp)
+                    </span>
+                  )}
+                  {loop.rolled_back && <span style={{ color: 'var(--red)' }}> · rolled back</span>}
                 </span>
               )}
             </span>
           </div>
+          {loop.rollback_reason && (
+            <div className="agent-rollback-note">{loop.rollback_reason}</div>
+          )}
           <div className="agent-step-list">
             {loop.steps.map((step) => (
               <StepRow key={step.step_id} step={step} />

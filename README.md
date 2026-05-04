@@ -1,8 +1,6 @@
 <div align="center">
 
-# Nvex
-
-### Self-Improving Physical AI Orchestration
+### NVex: Self-Improving Physical AI Orchestration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Demo](https://img.shields.io/badge/Demo-React%20%2B%20FastAPI-16a34a.svg)](#run-the-demo)

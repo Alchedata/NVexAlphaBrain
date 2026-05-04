@@ -6,7 +6,17 @@ import { useNvexRuntime } from '../data/NvexRuntimeContext.jsx';
 const STEPS = ['Load checkpoint', 'Dispatch backend job', 'Poll job status', 'Compare results'];
 
 export default function IterationRunner() {
-  const { data, demoState, pollIterationStatus, agentRun, startAutoImprove, advanceAgentStep } = useNvexRuntime();
+  const {
+    data,
+    demoState,
+    pollIterationStatus,
+    agentRun,
+    startAutoImprove,
+    advanceAgentStep,
+    streamAgentRun,
+    stopAgentStream,
+    isAgentStreaming,
+  } = useNvexRuntime();
   const status = demoState?.iteration_job?.status || 'completed';
   const [autoMode, setAutoMode] = useState(false);
 
@@ -128,6 +138,9 @@ export default function IterationRunner() {
         <AgentReasoningPanel
           agentRun={agentRun}
           onAdvance={!agentIsDone ? advanceAgentStep : undefined}
+          onStream={!agentIsDone ? streamAgentRun : undefined}
+          onPause={!agentIsDone ? stopAgentStream : undefined}
+          isStreaming={isAgentStreaming}
         />
       )}
 
